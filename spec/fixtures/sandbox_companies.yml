@@ -1,0 +1,39 @@
+# Sandbox Companies for Development Testing
+# These are test companies provided by Open Factura for sandbox environment
+
+companies:
+  haulmer:
+    apikey: "928e15a2d14d4a6292345f04960f4bd3"
+    rut_emisor: "76795561-8"
+    razon_social: "HAULMER SPA"
+    giro_emisor: "VENTA AL POR MENOR EN EMPRESAS DE VENTA A DISTANCIA VÍA INTERNET; COMERCIO ELEC"
+    actividad_economica: 479100
+    direccion_origen: "ARTURO PRAT 527   CURICO"
+    comuna_origen: "Curicó"
+    codigo_sii_sucursal: "81303347"
+    issuer:
+      rut: "76795561-8"
+      razon_social: "HAULMER SPA"
+      giro: "VENTA AL POR MENOR EN EMPRESAS DE VENTA A DISTANCIA VÍA INTERNET; COMERCIO ELEC"
+      actividad_economica: 479100
+      direccion: "ARTURO PRAT 527   CURICO"
+      comuna: "Curicó"
+      codigo_sii_sucursal: "81303347"
+
+  hosty:
+    apikey: "41eb78998d444dbaa4922c410ef14057"
+    rut_emisor: "76430498-5"
+    razon_social: "HOSTY SPA"
+    giro_emisor: "EMPRESAS DE SERVICIOS INTEGRALES DE INFORMÁTICA"
+    actividad_economica: 620200
+    direccion_origen: "ARTURO PRAT 527 3 pis OF 1"
+    comuna_origen: "Curicó"
+    codigo_sii_sucursal: "79457965"
+    issuer:
+      rut: "76430498-5"
+      razon_social: "HOSTY SPA"
+      giro: "EMPRESAS DE SERVICIOS INTEGRALES DE INFORMÁTICA"
+      actividad_economica: 620200
+      direccion: "ARTURO PRAT 527 3 pis OF 1"
+      comuna: "Curicó"
+      codigo_sii_sucursal: "79457965"

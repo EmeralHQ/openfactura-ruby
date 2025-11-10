@@ -6,3 +6,9 @@
 /pkg/
 /spec/reports/
 /tmp/
+.vscode/
+.rspec_status
+*.gem
+.DS_Store
+.env
+.env.local

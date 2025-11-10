@@ -1,0 +1,20 @@
+# Ruby LSP Configuration
+# This file configures the Ruby LSP server for this project
+
+# RuboCop configuration
+rubocop:
+  # Use the project's RuboCop configuration
+  use_bundler: true
+
+# Features configuration
+features:
+  # Enable inlay hints
+  inlay_hint:
+    implicit_hash_value: true
+    implicit_rescue: true
+
+# Workspace configuration
+workspace:
+  # Load paths for the project
+  load_paths:
+    - lib

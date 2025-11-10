@@ -1,0 +1,256 @@
+# frozen_string_literal: true
+
+RSpec.describe Openfactura::DSL::Documents do
+  let(:client) { instance_double(Openfactura::Client) }
+  let(:documents) { described_class.new(client) }
+
+  let(:receiver) do
+    Openfactura::DSL::Receiver.new(
+      rut: "76430498-5",
+      business_name: "HOSTY SPA",
+      address: "ARTURO PRAT 527",
+      commune: "Curicó"
+    )
+  end
+
+  let(:issuer) do
+    Openfactura::DSL::Issuer.new(
+      rut: "76795561-8",
+      business_name: "HAULMER SPA",
+      business_activity: "VENTA AL POR MENOR",
+      economic_activity_code: "479100",
+      address: "ARTURO PRAT 527",
+      commune: "Curicó",
+      sii_branch_code: "81303347"
+    )
+  end
+
+  let(:item) do
+    Openfactura::DSL::DteItem.new(
+      line_number: 1,
+      name: "Producto",
+      quantity: 1,
+      price: 2000,
+      amount: 2000
+    )
+  end
+
+  let(:totals) do
+    Openfactura::DSL::Totals.new(
+      net_amount: 2000,
+      tax_amount: 380,
+      total_amount: 2380,
+      tax_rate: "19"
+    )
+  end
+
+  let(:dte) do
+    Openfactura::DSL::Dte.new(
+      type: 33,
+      receiver: receiver,
+      items: [item],
+      totals: totals
+    )
+  end
+
+  describe "#emit" do
+    let(:success_response) do
+      {
+        TOKEN: "test-token-123",
+        FOLIO: 12345,
+        PDF: "base64pdfcontent",
+        XML: "base64xmlcontent"
+      }
+    end
+
+    context "with valid DTE and issuer" do
+      it "emits a document successfully" do
+        expect(client).to receive(:post).with(
+          "/v2/dte/document",
+          body: hash_including(dte: hash_including(Encabezado: anything)),
+          headers: hash_including("Idempotency-Key" => anything)
+        ).and_return(success_response)
+
+        response = documents.emit(dte: dte, issuer: issuer, response: ["PDF", "XML", "FOLIO", "TOKEN"])
+
+        expect(response).to be_a(Openfactura::DocumentResponse)
+        expect(response.token).to eq("test-token-123")
+        expect(response.folio).to eq(12345)
+        expect(response.pdf).to eq("base64pdfcontent")
+        expect(response.xml).to eq("base64xmlcontent")
+      end
+
+      it "generates idempotency_key if not provided" do
+        allow(SecureRandom).to receive(:uuid).and_return("generated-uuid-123")
+
+        expect(client).to receive(:post).with(
+          "/v2/dte/document",
+          body: anything,
+          headers: hash_including("Idempotency-Key" => "generated-uuid-123")
+        ).and_return(success_response)
+
+        response = documents.emit(dte: dte, issuer: issuer)
+
+        expect(response.idempotency_key).to eq("generated-uuid-123")
+      end
+
+      it "uses provided idempotency_key" do
+        custom_key = "my-custom-key-12345"
+
+        expect(client).to receive(:post).with(
+          "/v2/dte/document",
+          body: anything,
+          headers: hash_including("Idempotency-Key" => custom_key)
+        ).and_return(success_response)
+
+        response = documents.emit(dte: dte, issuer: issuer, idempotency_key: custom_key)
+
+        expect(response.idempotency_key).to eq(custom_key)
+      end
+
+      it "includes custom fields in request body" do
+        custom_fields = { informationNote: "Nota informativa", paymentNote: "Pago a 30 días" }
+
+        expect(client).to receive(:post).with(
+          "/v2/dte/document",
+          body: hash_including(custom: custom_fields),
+          headers: anything
+        ).and_return(success_response)
+
+        documents.emit(dte: dte, issuer: issuer, custom: custom_fields)
+      end
+
+      it "includes iva_exceptional in request body" do
+        iva_exceptional = ["ARTESANO"]
+
+        expect(client).to receive(:post).with(
+          "/v2/dte/document",
+          body: hash_including(ivaExceptional: iva_exceptional),
+          headers: anything
+        ).and_return(success_response)
+
+        documents.emit(dte: dte, issuer: issuer, iva_exceptional: iva_exceptional)
+      end
+
+      it "includes send_email in request body" do
+        send_email = {
+          to: "cliente@example.com",
+          subject: "Su factura electrónica",
+          body: "Adjunto encontrará su factura"
+        }
+
+        expect(client).to receive(:post).with(
+          "/v2/dte/document",
+          body: hash_including(sendEmail: send_email),
+          headers: anything
+        ).and_return(success_response)
+
+        documents.emit(dte: dte, issuer: issuer, send_email: send_email)
+      end
+
+      it "sets issuer in DTE if not already set" do
+        dte_without_issuer = Openfactura::DSL::Dte.new(
+          type: 33,
+          receiver: receiver,
+          items: [item],
+          totals: totals
+        )
+
+        expect(client).to receive(:post).and_return(success_response)
+
+        documents.emit(dte: dte_without_issuer, issuer: issuer)
+
+        expect(dte_without_issuer.issuer).to eq(issuer)
+      end
+    end
+
+    context "with invalid arguments" do
+      it "raises ArgumentError if dte is not a Dte object" do
+        expect do
+          documents.emit(dte: {}, issuer: issuer)
+        end.to raise_error(ArgumentError, "dte must be a Dte object")
+      end
+
+      it "raises ArgumentError if issuer is not an Issuer object" do
+        expect do
+          documents.emit(dte: dte, issuer: {})
+        end.to raise_error(ArgumentError, "issuer must be an Issuer object")
+      end
+    end
+
+    context "with API errors" do
+      it "raises DocumentError when API returns error structure" do
+        error_response = {
+          error: {
+            message: "Faltan datos obligatorios",
+            code: "OF-01",
+            details: [
+              { field: "Encabezado.Emisor.RUTEmisor", issue: "Campo requerido" }
+            ]
+          }
+        }
+
+        api_error = Openfactura::ApiError.new("Bad Request", status_code: 400, response_body: error_response)
+
+        expect(client).to receive(:post).and_raise(api_error)
+
+        expect do
+          documents.emit(dte: dte, issuer: issuer)
+        end.to raise_error(Openfactura::DocumentError) do |error|
+          expect(error.code).to eq("OF-01")
+          expect(error.message).to eq("Faltan datos obligatorios")
+          expect(error.has_details?).to be true
+          expect(error.error_fields).to include("Encabezado.Emisor.RUTEmisor")
+        end
+      end
+
+      it "raises DocumentError when API returns error structure as string" do
+        error_response_string = {
+          error: {
+            message: "Tipo Dte no soportado",
+            code: "OF-05"
+          }
+        }.to_json
+
+        api_error = Openfactura::ApiError.new("Bad Request", status_code: 400, response_body: error_response_string)
+
+        expect(client).to receive(:post).and_raise(api_error)
+
+        expect do
+          documents.emit(dte: dte, issuer: issuer)
+        end.to raise_error(Openfactura::DocumentError) do |error|
+          expect(error.code).to eq("OF-05")
+          expect(error.message).to eq("Tipo Dte no soportado")
+        end
+      end
+
+      it "raises ApiError when response doesn't contain error structure" do
+        api_error = Openfactura::ApiError.new("Internal Server Error", status_code: 500, response_body: { message: "Server error" })
+
+        expect(client).to receive(:post).and_raise(api_error)
+
+        expect do
+          documents.emit(dte: dte, issuer: issuer)
+        end.to raise_error(Openfactura::ApiError)
+      end
+    end
+  end
+
+  describe "#find_by_token" do
+    it "finds a document by token" do
+      token = "test-token-123"
+      response_data = {
+        id: 1,
+        token: token,
+        folio: 12345,
+        status: "sent"
+      }
+
+      expect(client).to receive(:get).with("/v2/dte/document/#{token}").and_return(response_data)
+
+      document = documents.find_by_token(token: token)
+      expect(document[:token]).to eq(token)
+      expect(document[:folio]).to eq(12345)
+    end
+  end
+end

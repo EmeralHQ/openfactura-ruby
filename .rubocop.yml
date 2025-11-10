@@ -1,0 +1,31 @@
+# RuboCop configuration following Omakase Rails style
+require:
+  - rubocop-rails-omakase
+
+AllCops:
+  TargetRubyVersion: 3.1
+  NewCops: enable
+  Exclude:
+    - 'bin/**/*'
+    - 'vendor/**/*'
+    - 'spec/spec_helper.rb'
+    - 'spec/rails_helper.rb'
+    - 'db/**/*'
+    - 'config/**/*'
+    - 'lib/generators/**/*'
+    - 'sig/**/*'
+
+# Omakase-style configuration
+Rails:
+  Enabled: true
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/Documentation:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*'
+    - 'lib/generators/**/*'

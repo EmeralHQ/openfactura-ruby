@@ -1,4 +1,28 @@
+# Type definitions for Openfactura gem
+# See the writing guide of rbs: https://github.com/ruby/rbs#guides
+
 module Openfactura
   VERSION: String
-  # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+
+  class Config
+    def self.api_key: () -> String?
+    def self.api_key=: (String?) -> String?
+    def self.environment: () -> Symbol
+    def self.environment=: (Symbol) -> Symbol
+    def self.timeout: () -> Integer
+    def self.timeout=: (Integer) -> Integer
+    def self.logger: () -> untyped
+    def self.logger=: (untyped) -> untyped
+    def self.api_base_url: () -> String?
+    def self.api_base_url=: (String?) -> String?
+    def self.base_url: () -> String
+    def self.validate!: () -> void
+  end
+
+  def self.configure: () { (Config) -> void } -> void
+  def self.config: () -> Config
+  def self.client: () -> Client
+  def self.documents: () -> DSL::Documents
+  def self.organizations: () -> DSL::Organizations
+  def self.reset!: () -> void
 end

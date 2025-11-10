@@ -1,0 +1,21 @@
+# frozen_string_literal: true
+
+# Open Factura Configuration
+# See https://docsapi-openfactura.haulmer.com/ for API documentation
+
+Openfactura.configure do |config|
+  # Set your API key from Open Factura
+  config.api_key = ENV.fetch("OPENFACTURA_API_KEY", "your-api-key-here")
+
+  # Set environment: :sandbox or :production
+  config.environment = Rails.env.production? ? :production : :sandbox
+
+  # Optional: Set custom timeout (default: 30 seconds)
+  # config.timeout = 30
+
+  # Optional: Set custom logger (default: nil, uses Rails.logger if available)
+  # config.logger = Rails.logger
+
+  # Optional: Override base URL (leave nil to use default)
+  # config.api_base_url = nil
+end
