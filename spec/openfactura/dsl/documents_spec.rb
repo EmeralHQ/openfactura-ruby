@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "base64"
+
 RSpec.describe Openfactura::DSL::Documents do
   let(:client) { instance_double(Openfactura::Client) }
   let(:documents) { described_class.new(client) }
@@ -440,7 +442,7 @@ RSpec.describe Openfactura::DSL::Documents do
   end
 
   describe "#find_by_token" do
-    it "finds a document by token" do
+    it "finds a document by token with json value" do
       token = "test-token-123"
       response_data = {
         id: 1,
@@ -451,12 +453,103 @@ RSpec.describe Openfactura::DSL::Documents do
 
       expect(client).to receive(:get).with("/v2/dte/document/#{token}/json").and_return(response_data)
 
-      document = documents.find_by_token(token: token, value: "json")
-      expect(document).to be_a(Openfactura::Document)
-      # Verify document was created with the response data
-      expect(document.id).to eq(1)
-      expect(document.folio).to eq(12345)
-      expect(document.status).to eq("sent")
+      response = documents.find_by_token(token: token, value: "json")
+      expect(response).to be_a(Openfactura::DocumentQueryResponse)
+      expect(response.token).to eq(token)
+      expect(response.query_type).to eq("json")
+      expect(response.has_document?).to be true
+      expect(response.document).to be_a(Openfactura::Document)
+      expect(response.document.id).to eq(1)
+      expect(response.document.folio).to eq(12345)
+      expect(response.document.status).to eq("sent")
+    end
+
+    it "finds a document by token with status value" do
+      token = "test-token-123"
+      status_string = "Aceptado"
+
+      expect(client).to receive(:get).with("/v2/dte/document/#{token}/status").and_return(status_string)
+
+      response = documents.find_by_token(token: token, value: "status")
+      expect(response).to be_a(Openfactura::DocumentQueryResponse)
+      expect(response.token).to eq(token)
+      expect(response.query_type).to eq("status")
+      expect(response.status).to eq("Aceptado")
+      expect(response.has_document?).to be true
+      expect(response.document.status).to eq("Aceptado")
+    end
+
+    it "finds a document by token with pdf value" do
+      token = "test-token-123"
+      pdf_binary = "pdf binary content"
+      base64_content = Base64.encode64(pdf_binary)
+      response_data = {
+        pdf: base64_content,
+        folio: 12345
+      }
+
+      expect(client).to receive(:get).with("/v2/dte/document/#{token}/pdf").and_return(response_data)
+
+      response = documents.find_by_token(token: token, value: "pdf")
+      expect(response).to be_a(Openfactura::DocumentQueryResponse)
+      expect(response.token).to eq(token)
+      expect(response.query_type).to eq("pdf")
+      expect(response.pdf).to eq(base64_content)
+      expect(response.folio).to eq(12345)
+      expect(response.decode_pdf).to eq(pdf_binary)
+    end
+
+    it "finds a document by token with xml value" do
+      token = "test-token-123"
+      response_data = {
+        xml: "base64xmlcontent",
+        folio: 12345
+      }
+
+      expect(client).to receive(:get).with("/v2/dte/document/#{token}/xml").and_return(response_data)
+
+      response = documents.find_by_token(token: token, value: "xml")
+      expect(response).to be_a(Openfactura::DocumentQueryResponse)
+      expect(response.token).to eq(token)
+      expect(response.query_type).to eq("xml")
+      expect(response.xml).to eq("base64xmlcontent")
+      expect(response.folio).to eq(12345)
+    end
+
+    it "finds a document by token with cedible value" do
+      token = "test-token-123"
+      response_data = {
+        cedible: "base64cediblecontent",
+        folio: 12345
+      }
+
+      expect(client).to receive(:get).with("/v2/dte/document/#{token}/cedible").and_return(response_data)
+
+      response = documents.find_by_token(token: token, value: "cedible")
+      expect(response).to be_a(Openfactura::DocumentQueryResponse)
+      expect(response.token).to eq(token)
+      expect(response.query_type).to eq("cedible")
+      expect(response.cedible).to eq("base64cediblecontent")
+      expect(response.folio).to eq(12345)
+    end
+
+    it "raises ArgumentError for invalid value" do
+      token = "test-token-123"
+      expect do
+        documents.find_by_token(token: token, value: "invalid")
+      end.to raise_error(ArgumentError, /value must be one of/)
+    end
+
+    it "raises ArgumentError for empty token" do
+      expect do
+        documents.find_by_token(token: "", value: "json")
+      end.to raise_error(ArgumentError, "token is required")
+    end
+
+    it "raises ArgumentError for nil token" do
+      expect do
+        documents.find_by_token(token: nil, value: "json")
+      end.to raise_error(ArgumentError, "token is required")
     end
   end
 end

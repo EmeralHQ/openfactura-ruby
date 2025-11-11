@@ -2,6 +2,7 @@
 
 require_relative "../resources/document"
 require_relative "../resources/document_response"
+require_relative "../resources/document_query_response"
 require_relative "../resources/document_error"
 require_relative "../resources/organization"
 require_relative "dte"
@@ -78,19 +79,22 @@ module Openfactura
       # Get document by token
       # @param token [String] Document token (required)
       # @param value [String] Value to retrieve: "status", "xml", "json", "pdf", or "cedible" (default: "json")
-      # @return [Document, String] Returns Document object for "json" and "status", String (base64) for "pdf"/"xml"/"cedible"
+      # @return [DocumentQueryResponse] Returns DocumentQueryResponse object with content based on query type
       # @raise [ArgumentError] if value is not one of the valid options
       # @example Get document JSON data
-      #   document = Openfactura.documents.find_by_token(token: "abc123", value: "json")
-      #   puts document.status
-      #   puts document.folio
+      #   response = Openfactura.documents.find_by_token(token: "abc123", value: "json")
+      #   puts response.document.status
+      #   puts response.document.folio
       # @example Get document status
-      #   document = Openfactura.documents.find_by_token(token: "abc123", value: "status")
-      #   puts document.status # "Aceptado", "Pendiente", "Rechazado", or "Aceptado con Reparo"
+      #   response = Openfactura.documents.find_by_token(token: "abc123", value: "status")
+      #   puts response.status # "Aceptado", "Pendiente", "Rechazado", or "Aceptado con Reparo"
       # @example Get PDF content (base64)
-      #   pdf_base64 = Openfactura.documents.find_by_token(token: "abc123", value: "pdf")
-      #   # Returns base64 encoded PDF string
+      #   response = Openfactura.documents.find_by_token(token: "abc123", value: "pdf")
+      #   pdf_binary = response.decode_pdf # Decoded PDF binary data
+      #   pdf_base64 = response.pdf # Base64 encoded PDF string
       def find_by_token(token:, value: "json")
+        raise ArgumentError, "token is required" if token.nil? || token.empty?
+
         valid_values = %w[status xml json pdf cedible]
         value_normalized = value.to_s.downcase
         unless valid_values.include?(value_normalized)
@@ -100,60 +104,14 @@ module Openfactura
         path = "/v2/dte/document/#{token}/#{value_normalized}"
         response_data = @client.get(path)
 
-        # Handle response based on value type
-        case value_normalized
-        when "status"
-          # Status returns a string: "Aceptado", "Pendiente", "Rechazado", "Aceptado con Reparo"
-          # Create Document object with status
-          Document.new(status: response_data, dte_id: token)
-        when "json"
-          # JSON returns full document data - map to Document object
-          map_response_to_document(response_data)
-        when "pdf", "xml", "cedible"
-          # These return base64 encoded content in a hash with the key matching the value
-          # Response format: { "pdf": "base64...", "folio": 600625 }
-          # Extract the base64 content (value can be symbol or string key)
-          if response_data.is_a?(Hash)
-            # Try to get the content by the value key (pdf, xml, or cedible)
-            content = response_data[value_normalized.to_sym] || response_data[value_normalized]
-            # If not found, return the entire response (shouldn't happen but handle gracefully)
-            content || response_data
-          else
-            # If response is not a hash, return as-is
-            response_data
-          end
-        else
-          # Fallback: return raw response
-          response_data
-        end
+        DocumentQueryResponse.new(
+          token: token,
+          query_type: value_normalized,
+          response_data: response_data
+        )
       end
 
       private
-
-      # Map API response to Document object
-      # @param response_data [Hash] API response data
-      # @return [Document] Document object with mapped attributes
-      def map_response_to_document(response_data)
-        # Handle both symbol and string keys
-        data = response_data.is_a?(Hash) ? response_data : {}
-
-        # Map common fields from API response to Document attributes
-        attributes = {
-          id: data[:id] || data["id"],
-          dte_id: data[:dte_id] || data["dte_id"] || data[:token] || data["token"],
-          type: data[:type] || data["type"] || data[:tipo_dte] || data["tipo_dte"],
-          status: data[:status] || data["status"] || data[:estado] || data["estado"],
-          folio: data[:folio] || data["folio"],
-          issuer_rut: data[:issuer_rut] || data["issuer_rut"] || data[:rut_emisor] || data["rut_emisor"],
-          receiver_rut: data[:receiver_rut] || data["receiver_rut"] || data[:rut_receptor] || data["rut_receptor"],
-          amount: data[:amount] || data["amount"] || data[:monto_total] || data["monto_total"],
-          tax_amount: data[:tax_amount] || data["tax_amount"] || data[:iva] || data["iva"],
-          created_at: data[:created_at] || data["created_at"] || data[:fecha_emision] || data["fecha_emision"],
-          updated_at: data[:updated_at] || data["updated_at"]
-        }
-
-        Document.new(attributes)
-      end
 
       # Build emission request body
       def build_emission_body(dte:, response:, custom:, iva_exceptional:, send_email:, issuer:)

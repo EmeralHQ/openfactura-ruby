@@ -143,15 +143,18 @@ RSpec.describe "Open Factura API Integration", :integration do
       expect(response_hash[:xml]).to eq(response.xml)
 
       # Step 13: Query document by token
-      document = nil
+      query_response = nil
       expect do
-        document = Openfactura.documents.find_by_token(token: response.token, value: "json")
+        query_response = Openfactura.documents.find_by_token(token: response.token, value: "json")
       end.not_to raise_error
 
-      expect(document).to be_a(Openfactura::Document)
+      expect(query_response).to be_a(Openfactura::DocumentQueryResponse)
+      expect(query_response.token).to eq(response.token)
+      expect(query_response.query_type).to eq("json")
+      expect(query_response.has_document?).to be true
+      expect(query_response.document).to be_a(Openfactura::Document)
       # Document uses dte_id for the token
-      document_token = document.dte_id || document[:dte_id] || document["dte_id"] || document[:token] || document["token"]
-      expect(document_token).to eq(response.token)
+      expect(query_response.document.dte_id).to eq(response.token)
     end
 
     it "handles idempotency correctly with same key" do
