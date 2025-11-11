@@ -4,15 +4,57 @@ A Ruby gem providing a DSL interface for interacting with the Open Factura API, 
 
 ## Installation
 
-### Add to Gemfile
+### From Private GitHub Repository (Recommended)
 
-Add this line to your application's Gemfile:
+If you're installing from a private GitHub repository, add this to your `Gemfile`:
+
+```ruby
+# Option 1: Using SSH (requires SSH key setup)
+gem 'openfactura', git: 'git@github.com:EmeralHQ/openfactura-ruby.git', branch: 'main'
+
+# Option 2: Using HTTPS with Personal Access Token
+# First, create a Personal Access Token (PAT) with 'repo' scope in GitHub
+# Then add to your .env or credentials:
+# GITHUB_TOKEN=your_personal_access_token
+gem 'openfactura', git: 'https://#{ENV["GITHUB_TOKEN"]}@github.com/EmeralHQ/openfactura-ruby.git', branch: 'main'
+
+# Option 3: Using HTTPS with credentials in Gemfile (less secure)
+# gem 'openfactura', git: 'https://username:token@github.com/EmeralHQ/openfactura-ruby.git', branch: 'main'
+```
+
+**For Rails applications**, you may need to configure Bundler to use credentials:
+
+1. Create or edit `~/.netrc` (Linux/Mac) or `%HOME%\_netrc` (Windows):
+   ```
+   machine github.com
+   login your_username
+   password your_personal_access_token
+   ```
+
+2. Or use SSH keys (recommended):
+   ```bash
+   # Generate SSH key if you don't have one
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+
+   # Add to GitHub: Settings > SSH and GPG keys > New SSH key
+   # Then use the git@github.com URL in your Gemfile
+   ```
+
+After adding to your Gemfile:
+
+```bash
+bundle install
+```
+
+### From RubyGems (Public Release)
+
+If the gem is published to RubyGems:
 
 ```ruby
 gem 'openfactura'
 ```
 
-And then execute:
+Then execute:
 
 ```bash
 bundle install
@@ -79,6 +121,8 @@ The gem uses object-oriented classes to build DTE structures:
 receiver = Openfactura::DSL::Receiver.new(
   rut: "76430498-5",
   business_name: "HOSTY SPA",
+  business_activity: "SERVICIOS DE INFORMATICA",
+  contact: "Contacto HOSTY",
   address: "ARTURO PRAT 527",
   commune: "Curicó"
 )
@@ -134,6 +178,8 @@ dte = Openfactura::DSL::Dte.new(
   receiver: {
     rut: "76430498-5",
     business_name: "HOSTY SPA",
+    business_activity: "SERVICIOS DE INFORMATICA",
+    contact: "Contacto HOSTY",
     address: "ARTURO PRAT 527",
     commune: "Curicó"
   },
@@ -206,10 +252,10 @@ dte = Openfactura::DSL::Dte.new(
 receiver = Openfactura::DSL::Receiver.new(
   rut: "76430498-5",              # Required
   business_name: "HOSTY SPA",    # Required
-  business_activity: "ACTIVIDADES DE CONSULTORIA",  # Optional
-  contact: "Juan Pérez",          # Optional
-  address: "ARTURO PRAT 527",      # Optional
-  commune: "Curicó"               # Optional
+  business_activity: "ACTIVIDADES DE CONSULTORIA",  # Required
+  contact: "Juan Pérez",          # Required
+  address: "ARTURO PRAT 527",      # Required
+  commune: "Curicó"               # Required
 )
 ```
 
@@ -288,10 +334,66 @@ documents_info = Openfactura.organizations.documents
 
 ### Querying Emitted Documents
 
+The `find_by_token` method returns a `DocumentQueryResponse` object that adapts to different query types:
+
 ```ruby
-# Find document by token
-document = Openfactura.documents.find_by_token(token: "token-del-documento")
+# Query document JSON data (default)
+response = Openfactura.documents.find_by_token(token: "token-del-documento", value: "json")
+# Access document data
+puts response.document.status
+puts response.document.folio
+puts response.document.type
+# Or use the content helper
+document = response.content  # Returns Document object
+
+# Query document status
+response = Openfactura.documents.find_by_token(token: "token-del-documento", value: "status")
+puts response.status  # "Aceptado", "Pendiente", "Rechazado", or "Aceptado con Reparo"
+puts response.document.status  # Also available via document object
+
+# Query PDF content (base64)
+response = Openfactura.documents.find_by_token(token: "token-del-documento", value: "pdf")
+pdf_base64 = response.pdf  # Base64 encoded PDF string
+pdf_binary = response.decode_pdf  # Decoded PDF binary data
+puts response.folio  # Folio number if available
+
+# Query XML content (base64)
+response = Openfactura.documents.find_by_token(token: "token-del-documento", value: "xml")
+xml_base64 = response.xml  # Base64 encoded XML string
+xml_string = response.decode_xml  # Decoded XML string (handles ISO-8859-1 encoding)
+puts response.folio  # Folio number if available
+
+# Query Cedible content (base64)
+response = Openfactura.documents.find_by_token(token: "token-del-documento", value: "cedible")
+cedible_base64 = response.cedible  # Base64 encoded Cedible string
+cedible_binary = response.decode_cedible  # Decoded Cedible binary data
+puts response.folio  # Folio number if available
+
+# Common properties available on all responses
+puts response.token  # Document token
+puts response.query_type  # "json", "status", "pdf", "xml", or "cedible"
+puts response.has_document?  # true for "json" and "status" queries
+puts response.to_h  # Convert to hash
 ```
+
+#### DocumentQueryResponse Methods
+
+| Method | Return Type | Description |
+|--------|-------------|-------------|
+| `token` | String | Document token |
+| `query_type` | String | Query type: "json", "status", "pdf", "xml", "cedible" |
+| `document` | Document | Document object (for "json" and "status" queries) |
+| `status` | String | Status string (for "status" query) |
+| `pdf` | String | Base64 PDF content (for "pdf" query) |
+| `xml` | String | Base64 XML content (for "xml" query) |
+| `cedible` | String | Base64 Cedible content (for "cedible" query) |
+| `folio` | Integer | Folio number (when available) |
+| `content` | Mixed | Returns content based on query type |
+| `has_document?` | Boolean | True if document object is available |
+| `decode_pdf` | String | Decoded PDF binary data |
+| `decode_xml` | String | Decoded XML string (ISO-8859-1 → UTF-8) |
+| `decode_cedible` | String | Decoded Cedible binary data |
+| `to_h` | Hash | Convert response to hash |
 
 ### Response Handling
 
@@ -434,6 +536,8 @@ class InvoicesController < ApplicationController
       receiver: Openfactura::DSL::Receiver.new(
         rut: params[:receiver_rut],
         business_name: params[:receiver_name],
+        business_activity: params[:receiver_business_activity],
+        contact: params[:receiver_contact],
         address: params[:receiver_address],
         commune: params[:receiver_commune]
       ),
@@ -546,6 +650,7 @@ This glossary maps Open Factura API terms (in Spanish) to the English class and 
 |----------------|---------------|----------|
 | Documento | `Openfactura::Document` | `lib/openfactura/resources/document.rb` |
 | Respuesta de Emisión | `Openfactura::DocumentResponse` | `lib/openfactura/resources/document_response.rb` |
+| Respuesta de Consulta | `Openfactura::DocumentQueryResponse` | `lib/openfactura/resources/document_query_response.rb` |
 | Error de Documento | `Openfactura::DocumentError` | `lib/openfactura/resources/document_error.rb` |
 | Organización | `Openfactura::Organization` | `lib/openfactura/resources/organization.rb` |
 
