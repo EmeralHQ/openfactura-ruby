@@ -8,6 +8,8 @@ RSpec.describe Openfactura::DSL::Documents do
     Openfactura::DSL::Receiver.new(
       rut: "76430498-5",
       business_name: "HOSTY SPA",
+      business_activity: "ACTIVIDADES DE CONSULTORIA",
+      contact: "Juan Pérez",
       address: "ARTURO PRAT 527",
       commune: "Curicó"
     )
@@ -234,6 +236,207 @@ RSpec.describe Openfactura::DSL::Documents do
         end.to raise_error(Openfactura::ApiError)
       end
     end
+
+    describe "receiver validation" do
+      it "raises ValidationError before sending request when receiver is missing required fields" do
+        issuer = Openfactura::DSL::Issuer.new(
+          rut: "76795561-8",
+          business_name: "HAULMER SPA",
+          business_activity: "VENTA AL POR MENOR",
+          economic_activity_code: "479100",
+          address: "ARTURO PRAT 527",
+          commune: "Curicó"
+        )
+
+        # Create receiver with missing required fields
+        receiver = Openfactura::DSL::Receiver.new(
+          rut: "76430498-5",
+          business_name: "HOSTY SPA"
+          # Missing: business_activity, contact, address, commune
+        )
+
+        dte = Openfactura::DSL::Dte.new(
+          type: 33,
+          receiver: receiver,
+          items: [
+            Openfactura::DSL::DteItem.new(
+              line_number: 1,
+              name: "Test",
+              quantity: 1,
+              price: 1000,
+              amount: 1000
+            )
+          ],
+          totals: Openfactura::DSL::Totals.new(
+            net_amount: 1000,
+            tax_amount: 190,
+            total_amount: 1190,
+            tax_rate: "19"
+          )
+        )
+
+        expect do
+          documents.emit(dte: dte, issuer: issuer)
+        end.to raise_error(Openfactura::ValidationError) do |error|
+          expect(error.message).to include("Receiver validation failed")
+          expect(error.message).to include("business_activity")
+          expect(error.message).to include("contact")
+          expect(error.message).to include("address")
+          expect(error.message).to include("commune")
+          expect(error.errors[:receiver]).to be_an(Array)
+        end
+      end
+
+      it "raises ValidationError before sending request when totals is missing required fields" do
+        issuer = Openfactura::DSL::Issuer.new(
+          rut: "76795561-8",
+          business_name: "HAULMER SPA",
+          business_activity: "VENTA AL POR MENOR",
+          economic_activity_code: "479100",
+          address: "ARTURO PRAT 527",
+          commune: "Curicó"
+        )
+
+        receiver = Openfactura::DSL::Receiver.new(
+          rut: "76430498-5",
+          business_name: "HOSTY SPA",
+          business_activity: "ACTIVIDADES DE CONSULTORIA",
+          contact: "Juan Pérez",
+          address: "ARTURO PRAT 527",
+          commune: "Curicó"
+        )
+
+        # Create totals with missing required field total_amount
+        totals = Openfactura::DSL::Totals.new(
+          net_amount: 2000,
+          tax_amount: 380
+          # Missing: total_amount
+        )
+
+        dte = Openfactura::DSL::Dte.new(
+          type: 33,
+          receiver: receiver,
+          items: [
+            Openfactura::DSL::DteItem.new(
+              line_number: 1,
+              name: "Test",
+              quantity: 1,
+              price: 1000,
+              amount: 1000
+            )
+          ],
+          totals: totals
+        )
+
+        expect do
+          documents.emit(dte: dte, issuer: issuer)
+        end.to raise_error(Openfactura::ValidationError) do |error|
+          expect(error.message).to include("Totals validation failed")
+          expect(error.message).to include("total_amount")
+          expect(error.message).to include("MntTotal")
+          expect(error.errors[:totals]).to be_an(Array)
+        end
+      end
+
+      it "raises ValidationError before sending request when issuer is missing required fields" do
+        receiver = Openfactura::DSL::Receiver.new(
+          rut: "76430498-5",
+          business_name: "HOSTY SPA",
+          business_activity: "ACTIVIDADES DE CONSULTORIA",
+          contact: "Juan Pérez",
+          address: "ARTURO PRAT 527",
+          commune: "Curicó"
+        )
+
+        # Create issuer with missing required fields
+        issuer = Openfactura::DSL::Issuer.new(
+          rut: "76795561-8",
+          business_name: "HAULMER SPA"
+          # Missing: business_activity, economic_activity_code, address, commune
+        )
+
+        dte = Openfactura::DSL::Dte.new(
+          type: 33,
+          receiver: receiver,
+          items: [
+            Openfactura::DSL::DteItem.new(
+              line_number: 1,
+              name: "Test",
+              quantity: 1,
+              price: 1000,
+              amount: 1000
+            )
+          ],
+          totals: Openfactura::DSL::Totals.new(
+            net_amount: 1000,
+            tax_amount: 190,
+            total_amount: 1190,
+            tax_rate: "19"
+          ),
+          issuer: issuer
+        )
+
+        expect do
+          documents.emit(dte: dte, issuer: issuer)
+        end.to raise_error(Openfactura::ValidationError) do |error|
+          expect(error.message).to include("Issuer validation failed")
+          expect(error.message).to include("business_activity")
+          expect(error.message).to include("economic_activity_code")
+          expect(error.message).to include("address")
+          expect(error.message).to include("commune")
+          expect(error.errors[:issuer]).to be_an(Array)
+        end
+      end
+
+      it "raises ValidationError before sending request when item is missing required fields" do
+        issuer = Openfactura::DSL::Issuer.new(
+          rut: "76795561-8",
+          business_name: "HAULMER SPA",
+          business_activity: "VENTA AL POR MENOR",
+          economic_activity_code: "479100",
+          address: "ARTURO PRAT 527",
+          commune: "Curicó"
+        )
+
+        receiver = Openfactura::DSL::Receiver.new(
+          rut: "76430498-5",
+          business_name: "HOSTY SPA",
+          business_activity: "ACTIVIDADES DE CONSULTORIA",
+          contact: "Juan Pérez",
+          address: "ARTURO PRAT 527",
+          commune: "Curicó"
+        )
+
+        # Create item with missing required fields
+        item = Openfactura::DSL::DteItem.new(
+          line_number: 1,
+          name: "Producto"
+          # Missing: quantity, price, amount
+        )
+
+        dte = Openfactura::DSL::Dte.new(
+          type: 33,
+          receiver: receiver,
+          items: [item],
+          totals: Openfactura::DSL::Totals.new(
+            net_amount: 1000,
+            tax_amount: 190,
+            total_amount: 1190,
+            tax_rate: "19"
+          )
+        )
+
+        expect do
+          documents.emit(dte: dte, issuer: issuer)
+        end.to raise_error(Openfactura::ValidationError) do |error|
+          expect(error.message).to include("DteItem validation failed")
+          expect(error.message).to include("quantity")
+          expect(error.message).to include("price")
+          expect(error.message).to include("amount")
+          expect(error.errors[:dte_item]).to be_an(Array)
+        end
+      end
+    end
   end
 
   describe "#find_by_token" do
@@ -246,11 +449,14 @@ RSpec.describe Openfactura::DSL::Documents do
         status: "sent"
       }
 
-      expect(client).to receive(:get).with("/v2/dte/document/#{token}").and_return(response_data)
+      expect(client).to receive(:get).with("/v2/dte/document/#{token}/json").and_return(response_data)
 
-      document = documents.find_by_token(token: token)
-      expect(document[:token]).to eq(token)
-      expect(document[:folio]).to eq(12345)
+      document = documents.find_by_token(token: token, value: "json")
+      expect(document).to be_a(Openfactura::Document)
+      # Verify document was created with the response data
+      expect(document.id).to eq(1)
+      expect(document.folio).to eq(12345)
+      expect(document.status).to eq("sent")
     end
   end
 end

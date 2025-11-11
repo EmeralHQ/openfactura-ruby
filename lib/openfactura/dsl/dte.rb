@@ -93,6 +93,7 @@ module Openfactura
 
       # Convert to API format hash (with Spanish/CamelCase keys)
       # @return [Hash] DTE structure in API format
+      # @raise [ValidationError] if receiver validation fails
       def to_api_hash
         id_doc = {
           TipoDTE: @type,
@@ -103,16 +104,22 @@ module Openfactura
         id_doc[:TpoTranVenta] = @sale_transaction_type if @sale_transaction_type
         id_doc[:FmaPago] = @payment_form if @payment_form
 
+        # Validate receiver, totals, and items before converting (will raise ValidationError if invalid)
+        receiver_hash = @receiver.to_api_hash
+        totals_hash = @totals.to_api_hash
+        # Validate each item (will raise ValidationError if any item is invalid)
+        items_hash = @items.map(&:to_api_hash)
+
         dte = {
           Encabezado: {
             IdDoc: id_doc,
-            Receptor: @receiver.to_api_hash,
-            Totales: @totals.to_api_hash
+            Receptor: receiver_hash,
+            Totales: totals_hash
           },
-          Detalle: @items.map(&:to_api_hash)
+          Detalle: items_hash
         }
 
-        # Add Emisor if provided
+        # Add Emisor if provided (will raise ValidationError if invalid)
         dte[:Encabezado][:Emisor] = @issuer.to_api_hash if @issuer
 
         dte

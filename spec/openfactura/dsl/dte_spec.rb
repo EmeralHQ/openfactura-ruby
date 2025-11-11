@@ -5,6 +5,8 @@ RSpec.describe Openfactura::DSL::Dte do
     Openfactura::DSL::Receiver.new(
       rut: "76430498-5",
       business_name: "HOSTY SPA",
+      business_activity: "ACTIVIDADES DE CONSULTORIA",
+      contact: "Juan Pérez",
       address: "ARTURO PRAT 527",
       commune: "Curicó"
     )
@@ -71,7 +73,10 @@ RSpec.describe Openfactura::DSL::Dte do
         receiver_hash = {
           rut: "76430498-5",
           business_name: "HOSTY SPA",
-          address: "ARTURO PRAT 527"
+          business_activity: "ACTIVIDADES DE CONSULTORIA",
+          contact: "Juan Pérez",
+          address: "ARTURO PRAT 527",
+          commune: "Curicó"
         }
 
         dte = described_class.new(

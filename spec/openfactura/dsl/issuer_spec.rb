@@ -67,6 +67,7 @@ RSpec.describe Openfactura::DSL::Issuer do
       issuer = described_class.new(
         rut: "76795561-8",
         business_name: "HAULMER SPA",
+        business_activity: "VENTA AL POR MENOR",
         economic_activity_code: 479100,
         address: "ARTURO PRAT 527",
         commune: "Curicó"
@@ -81,6 +82,7 @@ RSpec.describe Openfactura::DSL::Issuer do
       issuer = described_class.new(
         rut: "76795561-8",
         business_name: "HAULMER SPA",
+        business_activity: "VENTA AL POR MENOR",
         economic_activity_code: "479100",
         address: "ARTURO PRAT 527",
         commune: "Curicó"
@@ -89,6 +91,57 @@ RSpec.describe Openfactura::DSL::Issuer do
       api_hash = issuer.to_api_hash
 
       expect(api_hash).not_to have_key(:Telefono)
+    end
+
+    it "raises ValidationError when required fields are missing" do
+      issuer = described_class.new(
+        rut: "76795561-8",
+        business_name: "HAULMER SPA"
+      )
+
+      expect do
+        issuer.to_api_hash
+      end.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("Issuer validation failed")
+        expect(error.message).to include("business_activity")
+        expect(error.message).to include("economic_activity_code")
+        expect(error.message).to include("address")
+        expect(error.message).to include("commune")
+        expect(error.errors[:issuer]).to be_an(Array)
+      end
+    end
+
+    it "raises ValidationError when fields are empty strings" do
+      issuer = described_class.new(
+        rut: "76795561-8",
+        business_name: "HAULMER SPA",
+        business_activity: "   ",
+        economic_activity_code: "",
+        address: "ARTURO PRAT 527",
+        commune: "Curicó"
+      )
+
+      expect do
+        issuer.to_api_hash
+      end.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("business_activity")
+        expect(error.message).to include("economic_activity_code")
+      end
+    end
+
+    it "validates all required fields are present" do
+      issuer = described_class.new(
+        rut: "76795561-8",
+        business_name: "HAULMER SPA",
+        business_activity: "VENTA AL POR MENOR",
+        economic_activity_code: "479100",
+        address: "ARTURO PRAT 527",
+        commune: "Curicó"
+      )
+
+      expect do
+        issuer.to_api_hash
+      end.not_to raise_error
     end
   end
 end

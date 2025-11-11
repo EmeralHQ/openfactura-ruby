@@ -68,9 +68,9 @@ module Openfactura
         # Re-raise our custom errors
         raise
       rescue Timeout::Error, Net::ReadTimeout => e
-        raise ApiError, "Request timeout: #{e.message}"
+        raise ApiError.new("Request timeout: #{e.message}")
       rescue StandardError => e
-        raise ApiError, "Request failed: #{e.message}"
+        raise ApiError.new("Request failed: #{e.message}")
       end
     end
 
@@ -79,19 +79,77 @@ module Openfactura
       when 200..299
         parse_response(response)
       when 401
-        raise AuthenticationError
+        error_message = extract_error_message(response.body) || "Authentication failed. Please check your API key."
+        raise AuthenticationError.new(error_message)
       when 404
-        raise NotFoundError
+        error_message = extract_error_message(response.body) || "Resource not found"
+        raise NotFoundError.new(error_message)
       when 429
-        raise RateLimitError
+        error_message = extract_error_message(response.body) || "Rate limit exceeded"
+        raise RateLimitError.new(error_message)
       when 500..599
-        raise ServerError, "Server error: #{response.body}"
+        error_message = extract_error_message(response.body) || "Server error: #{response.body}"
+        raise ServerError.new(error_message)
       else
+        # For 400 and other client errors, try to extract meaningful error message
+        error_message = extract_error_message(response.body)
+        base_message = if error_message
+                         "API request failed with status #{response.code}: #{error_message}"
+                       else
+                         "API request failed with status #{response.code}"
+                       end
         raise ApiError.new(
-          "API request failed with status #{response.code}",
+          base_message,
           status_code: response.code,
           response_body: response.body
         )
+      end
+    end
+
+    # Extract error message from response body
+    # Handles Open Factura error format: { "error": { "message": "...", "code": "...", "details": [...] } }
+    def extract_error_message(body)
+      return nil unless body
+
+      begin
+        error_data = if body.is_a?(Hash)
+                       body
+                     elsif body.is_a?(String) && !body.empty?
+                       JSON.parse(body)
+                     else
+                       nil
+                     end
+
+        return nil unless error_data
+
+        # Check for Open Factura error format: { "error": { "message": "...", "code": "...", "details": [...] } }
+        error_obj = error_data[:error] || error_data["error"]
+        if error_obj.is_a?(Hash)
+          # Extract message from error.message
+          error_message = error_obj[:message] || error_obj["message"]
+          error_code = error_obj[:code] || error_obj["code"]
+
+          # Build message with code if available
+          if error_message
+            return error_code ? "[#{error_code}] #{error_message}" : error_message
+          end
+        end
+
+        # Fallback: Try common error message fields
+        error_message = error_data[:message] || error_data["message"] ||
+                        error_data[:error] || error_data["error"] ||
+                        error_data[:detail] || error_data["detail"]
+
+        # If error is a hash, try to get a message from it
+        if error_message.is_a?(Hash)
+          error_message = error_message[:message] || error_message["message"] ||
+                          error_message[:error] || error_message["error"]
+        end
+
+        error_message.to_s if error_message
+      rescue JSON::ParserError
+        # If body is not JSON, return it as string (truncated if too long)
+        body.is_a?(String) && body.length > 200 ? "#{body[0..200]}..." : body.to_s
       end
     end
 

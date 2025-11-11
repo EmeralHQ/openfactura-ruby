@@ -85,5 +85,71 @@ RSpec.describe Openfactura::DSL::Totals do
 
       expect(api_hash[:TasaIVA]).to eq("19")
     end
+
+    it "raises ValidationError when required field total_amount is missing" do
+      totals = described_class.new(
+        net_amount: 2000,
+        tax_amount: 380
+      )
+
+      expect do
+        totals.to_api_hash
+      end.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("Totals validation failed")
+        expect(error.message).to include("total_amount")
+        expect(error.message).to include("MntTotal")
+        expect(error.errors[:totals]).to be_an(Array)
+        expect(error.errors[:totals]).to include(:total_amount)
+      end
+    end
+
+    it "raises ValidationError when total_amount is nil" do
+      totals = described_class.new(
+        total_amount: nil,
+        net_amount: 2000
+      )
+
+      expect do
+        totals.to_api_hash
+      end.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("total_amount")
+      end
+    end
+
+    it "raises ValidationError when total_amount is empty string" do
+      totals = described_class.new(
+        total_amount: "",
+        net_amount: 2000
+      )
+
+      expect do
+        totals.to_api_hash
+      end.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("total_amount")
+      end
+    end
+
+    it "allows zero as valid total_amount" do
+      totals = described_class.new(
+        total_amount: 0
+      )
+
+      expect do
+        api_hash = totals.to_api_hash
+        expect(api_hash[:MntTotal]).to eq(0)
+      end.not_to raise_error
+    end
+
+    it "validates all required fields are present" do
+      totals = described_class.new(
+        total_amount: 2380,
+        net_amount: 2000,
+        tax_amount: 380
+      )
+
+      expect do
+        totals.to_api_hash
+      end.not_to raise_error
+    end
   end
 end

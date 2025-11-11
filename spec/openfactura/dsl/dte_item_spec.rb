@@ -103,5 +103,86 @@ RSpec.describe Openfactura::DSL::DteItem do
 
       expect(api_hash).not_to have_key(:IndExe)
     end
+
+    it "raises ValidationError when required fields are missing" do
+      item = described_class.new(
+        line_number: 1,
+        name: "Producto"
+        # Missing: quantity, price, amount
+      )
+
+      expect do
+        item.to_api_hash
+      end.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("DteItem validation failed")
+        expect(error.message).to include("quantity")
+        expect(error.message).to include("price")
+        expect(error.message).to include("amount")
+        expect(error.errors[:dte_item]).to be_an(Array)
+      end
+    end
+
+    it "raises ValidationError when fields are nil" do
+      item = described_class.new(
+        line_number: nil,
+        name: "Producto",
+        quantity: 1,
+        price: 2000,
+        amount: 2000
+      )
+
+      expect do
+        item.to_api_hash
+      end.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("line_number")
+      end
+    end
+
+    it "raises ValidationError when name is empty string" do
+      item = described_class.new(
+        line_number: 1,
+        name: "",
+        quantity: 1,
+        price: 2000,
+        amount: 2000
+      )
+
+      expect do
+        item.to_api_hash
+      end.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("name")
+      end
+    end
+
+    it "allows zero as valid value for numeric fields" do
+      item = described_class.new(
+        line_number: 1,
+        name: "Producto",
+        quantity: 0,
+        price: 0,
+        amount: 0
+      )
+
+      expect do
+        api_hash = item.to_api_hash
+        expect(api_hash[:QtyItem]).to eq(0)
+        expect(api_hash[:PrcItem]).to eq(0)
+        expect(api_hash[:MontoItem]).to eq(0)
+      end.not_to raise_error
+    end
+
+    it "validates all required fields are present" do
+      item = described_class.new(
+        line_number: 1,
+        name: "Producto",
+        quantity: 1,
+        price: 2000,
+        amount: 2000
+      )
+
+      expect do
+        item.to_api_hash
+      end.not_to raise_error
+    end
   end
 end

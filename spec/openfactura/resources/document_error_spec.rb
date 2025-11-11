@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../../../lib/openfactura/resources/document_error"
+
 RSpec.describe Openfactura::DocumentError do
   describe "#initialize" do
     it "initializes with error structure from API" do

@@ -47,5 +47,57 @@ RSpec.describe Openfactura::Client do
       response = client.post("/v1/test", body: { name: "test" })
       expect(response["id"] || response[:id]).to eq(1)
     end
+
+    it "extracts error message from Open Factura error format" do
+      error_response = {
+        error: {
+          message: "Faltan datos obligatorios",
+          code: "OF-01",
+          details: [
+            { field: "Encabezado.Emisor.RUTEmisor", issue: "Campo requerido" },
+            { field: "Encabezado.Receptor.RUTRecep", issue: "Campo requerido" }
+          ]
+        }
+      }.to_json
+
+      stub_request(:post, "#{config.base_url}/v1/test")
+        .to_return(status: 400, body: error_response, headers: { "Content-Type" => "application/json" })
+
+      expect do
+        client.post("/v1/test", body: {})
+      end.to raise_error(Openfactura::ApiError) do |error|
+        # Verify error message includes code and message from Open Factura format
+        expect(error.message).to include("[OF-01]")
+        expect(error.message).to include("Faltan datos obligatorios")
+        # Verify details are included in the message
+        expect(error.message).to include("Encabezado.Emisor.RUTEmisor: Campo requerido")
+        expect(error.message).to include("Encabezado.Receptor.RUTRecep: Campo requerido")
+      end
+    end
+
+    it "includes error details in message for Open Factura format" do
+      error_response = {
+        error: {
+          message: "Validación de Campos",
+          code: "OF-10",
+          details: [
+            { field: "RUTRecep", issue: "El campo es requerido" },
+            { field: "FchEmis", issue: "Formato de fecha inválido" }
+          ]
+        }
+      }.to_json
+
+      stub_request(:post, "#{config.base_url}/v1/test")
+        .to_return(status: 400, body: error_response, headers: { "Content-Type" => "application/json" })
+
+      expect do
+        client.post("/v1/test", body: {})
+      end.to raise_error(Openfactura::ApiError) do |error|
+        expect(error.message).to include("[OF-10]")
+        expect(error.message).to include("Validación de Campos")
+        expect(error.message).to include("RUTRecep: El campo es requerido")
+        expect(error.message).to include("FchEmis: Formato de fecha inválido")
+      end
+    end
   end
 end

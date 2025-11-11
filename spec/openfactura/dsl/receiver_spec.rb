@@ -55,16 +55,55 @@ RSpec.describe Openfactura::DSL::Receiver do
       })
     end
 
-    it "excludes nil values" do
+    it "raises ValidationError when required fields are missing" do
       receiver = described_class.new(
         rut: "76430498-5",
         business_name: "HOSTY SPA"
       )
 
-      api_hash = receiver.to_api_hash
+      expect do
+        receiver.to_api_hash
+      end.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("Receiver validation failed")
+        expect(error.message).to include("business_activity")
+        expect(error.message).to include("contact")
+        expect(error.message).to include("address")
+        expect(error.message).to include("commune")
+        expect(error.errors[:receiver]).to be_an(Array)
+      end
+    end
 
-      expect(api_hash).not_to have_key(:GiroRecep)
-      expect(api_hash).not_to have_key(:Contacto)
+    it "raises ValidationError when fields are empty strings" do
+      receiver = described_class.new(
+        rut: "76430498-5",
+        business_name: "HOSTY SPA",
+        business_activity: "   ",
+        contact: "",
+        address: "ARTURO PRAT 527",
+        commune: "Curicó"
+      )
+
+      expect do
+        receiver.to_api_hash
+      end.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("business_activity")
+        expect(error.message).to include("contact")
+      end
+    end
+
+    it "validates all required fields are present" do
+      receiver = described_class.new(
+        rut: "76430498-5",
+        business_name: "HOSTY SPA",
+        business_activity: "ACTIVIDADES DE CONSULTORIA",
+        contact: "Juan Pérez",
+        address: "ARTURO PRAT 527",
+        commune: "Curicó"
+      )
+
+      expect do
+        receiver.to_api_hash
+      end.not_to raise_error
     end
   end
 end
