@@ -15,6 +15,8 @@ module Openfactura
 
     def initialize(config = Openfactura::Config)
       @config = config
+      # Validate configuration when client is actually used (lazy validation)
+      config.validate! if config.respond_to?(:validate!)
       self.class.base_uri config.base_url
       self.class.default_timeout config.timeout
       self.class.headers "Content-Type" => "application/json"

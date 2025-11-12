@@ -15,9 +15,12 @@ end
 module Openfactura
   class << self
     # Configure Open Factura SDK
+    # Validation is done lazily when the API is actually used, not during configuration
+    # This allows Rails to load the initializer even if API key is not yet set
     def configure
       yield(Config) if block_given?
-      Config.validate!
+      # Note: validate! is called lazily in Client#initialize instead of here
+      # This allows configuration to be set up without immediately requiring an API key
     end
 
     # Get current configuration

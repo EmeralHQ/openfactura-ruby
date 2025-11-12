@@ -5,7 +5,11 @@
 
 Openfactura.configure do |config|
   # Set your API key from Open Factura
-  config.api_key = ENV.fetch("OPENFACTURA_API_KEY", "your-api-key-here")
+  # You can use environment variables, Rails credentials, or a default value
+  # Validation happens lazily when the API is used, so Rails can load even without an API key
+  config.api_key = ENV.fetch("OPENFACTURA_API_KEY") do
+    Rails.application.credentials.dig(:openfactura, :api_key) || "your-api-key-here"
+  end
 
   # Set environment: :sandbox or :production
   config.environment = Rails.env.production? ? :production : :sandbox

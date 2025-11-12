@@ -69,11 +69,13 @@ module Openfactura
     end
 
     # Validate configuration
+    # This is called lazily when the Client is initialized, not during configuration
+    # This allows Rails to load the initializer even if API key is not yet set
     def self.validate!
       # Ensure ValidationError is loaded
       ::Openfactura::ValidationError
 
-      raise ::Openfactura::ValidationError, "API key is required" if api_key.nil? || api_key.empty?
+      raise ::Openfactura::ValidationError, "API key is required" if api_key.nil? || api_key.to_s.strip.empty?
       raise ::Openfactura::ValidationError, "Environment must be :sandbox or :production" unless %i[sandbox production].include?(environment)
     end
   end
