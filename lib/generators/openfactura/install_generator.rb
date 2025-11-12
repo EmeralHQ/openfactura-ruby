@@ -13,10 +13,6 @@ module Openfactura
       def create_initializer
         template "openfactura.rb.erb", "config/initializers/openfactura.rb"
       end
-
-      def show_readme
-        readme "README" if behavior == :invoke
-      end
     end
   end
 end
