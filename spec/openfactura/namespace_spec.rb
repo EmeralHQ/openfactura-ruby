@@ -308,4 +308,26 @@ RSpec.describe "Openfactura namespace implementation" do
       expect(organization).to be_a(Openfactura::Organization)
     end
   end
+
+  describe "DocumentError availability for rescue clauses" do
+    it "can be rescued immediately after requiring the gem" do
+      # This test ensures DocumentError is available for rescue clauses
+      # even before any other code in the gem is used
+      expect(defined?(Openfactura::DocumentError)).to be_truthy
+      expect(Openfactura::DocumentError).to be_a(Class)
+    end
+
+    it "can be used in rescue clauses without explicit require" do
+      # Simulate a rescue clause scenario
+      error = nil
+      begin
+        raise Openfactura::DocumentError.new({ error: { code: "OF-01", message: "Test error" } })
+      rescue Openfactura::DocumentError => e
+        error = e
+      end
+
+      expect(error).to be_a(Openfactura::DocumentError)
+      expect(error.code).to eq("OF-01")
+    end
+  end
 end
