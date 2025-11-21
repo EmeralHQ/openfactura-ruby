@@ -79,7 +79,7 @@ module Openfactura
           end
         end.join(", ")
 
-        raise ValidationError.new(
+        raise Openfactura::ValidationError.new(
           "Issuer validation failed: Missing required fields: #{field_names}",
           errors: { issuer: missing_fields }
         )

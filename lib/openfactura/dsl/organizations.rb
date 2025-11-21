@@ -18,7 +18,7 @@ module Openfactura
         query_params = {}
         query_params[:extra_fields] = extra_fields if extra_fields
         response = @client.get("/v2/dte/organization", query: query_params)
-        Organization.new(response)
+        Openfactura::Organization.new(response)
       end
 
       # Get current organization as Issuer object
@@ -42,7 +42,7 @@ module Openfactura
       # @param organization [Organization] Organization object
       # @return [Issuer] Issuer object
       def build_issuer_from_organization(organization)
-        raise ArgumentError, "organization must be an Organization object" unless organization.is_a?(Organization)
+        raise ArgumentError, "organization must be an Organization object" unless organization.is_a?(Openfactura::Organization)
 
         primary_activity = organization.primary_activity || {}
         business_activity = primary_activity[:giro] || primary_activity["giro"] || organization.glosa_descriptiva

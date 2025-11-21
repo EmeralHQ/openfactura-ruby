@@ -75,7 +75,7 @@ module Openfactura
           end
         end.join(", ")
 
-        raise ValidationError.new(
+        raise Openfactura::ValidationError.new(
           "Totals validation failed: Missing required fields: #{field_names}",
           errors: { totals: missing_fields }
         )

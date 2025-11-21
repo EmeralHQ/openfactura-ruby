@@ -74,7 +74,7 @@ module Openfactura
           end
         end.join(", ")
 
-        raise ValidationError.new(
+        raise Openfactura::ValidationError.new(
           "Receiver validation failed: Missing required fields: #{field_names}",
           errors: { receiver: missing_fields }
         )

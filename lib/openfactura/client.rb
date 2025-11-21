@@ -66,13 +66,13 @@ module Openfactura
         # We need to check the response code manually
         response = self.class.public_send(method, path, options)
         handle_response(response)
-      rescue AuthenticationError, NotFoundError, RateLimitError, ServerError => e
+      rescue Openfactura::AuthenticationError, Openfactura::NotFoundError, Openfactura::RateLimitError, Openfactura::ServerError => e
         # Re-raise our custom errors
         raise
       rescue Timeout::Error, Net::ReadTimeout => e
-        raise ApiError.new("Request timeout: #{e.message}")
+        raise Openfactura::ApiError.new("Request timeout: #{e.message}")
       rescue StandardError => e
-        raise ApiError.new("Request failed: #{e.message}")
+        raise Openfactura::ApiError.new("Request failed: #{e.message}")
       end
     end
 
@@ -82,16 +82,16 @@ module Openfactura
         parse_response(response)
       when 401
         error_message = extract_error_message(response.body) || "Authentication failed. Please check your API key."
-        raise AuthenticationError.new(error_message)
+        raise Openfactura::AuthenticationError.new(error_message)
       when 404
         error_message = extract_error_message(response.body) || "Resource not found"
-        raise NotFoundError.new(error_message)
+        raise Openfactura::NotFoundError.new(error_message)
       when 429
         error_message = extract_error_message(response.body) || "Rate limit exceeded"
-        raise RateLimitError.new(error_message)
+        raise Openfactura::RateLimitError.new(error_message)
       when 500..599
         error_message = extract_error_message(response.body) || "Server error: #{response.body}"
-        raise ServerError.new(error_message)
+        raise Openfactura::ServerError.new(error_message)
       else
         # For 400 and other client errors, try to extract meaningful error message
         error_message = extract_error_message(response.body)
@@ -100,7 +100,7 @@ module Openfactura
                        else
                          "API request failed with status #{response.code}"
                        end
-        raise ApiError.new(
+        raise Openfactura::ApiError.new(
           base_message,
           status_code: response.code,
           response_body: response.body

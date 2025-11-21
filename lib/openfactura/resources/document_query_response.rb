@@ -24,7 +24,7 @@ module Openfactura
       when "status"
         # Status returns a string: "Aceptado", "Pendiente", "Rechazado", "Aceptado con Reparo"
         @status = response_data.is_a?(String) ? response_data : response_data.to_s
-        @document = Document.new(status: @status, dte_id: token)
+        @document = Openfactura::Document.new(status: @status, dte_id: token)
       when "pdf", "xml", "cedible"
         # These return base64 encoded content in a hash with the key matching the value
         # Response format: { "pdf": "base64...", "folio": 600625 }
@@ -155,7 +155,7 @@ module Openfactura
         updated_at: data[:updated_at] || data["updated_at"]
       }
 
-      Document.new(attributes)
+      Openfactura::Document.new(attributes)
     end
   end
 end

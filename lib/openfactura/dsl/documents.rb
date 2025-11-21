@@ -47,11 +47,11 @@ module Openfactura
         # HTTParty automatically converts hash to JSON, so we pass the hash directly
         begin
           response_data = @client.post("/v2/dte/document", body: body, headers: headers)
-          response = DocumentResponse.new(response_data)
+          response = Openfactura::DocumentResponse.new(response_data)
           # Add idempotency_key to response
           response.idempotency_key = idempotency_key
           response
-        rescue ApiError => e
+        rescue Openfactura::ApiError => e
           # Check if response contains Open Factura error format: { "error": { "message": "...", "code": "...", "details": [...] } }
           if e.response_body
             begin
@@ -65,7 +65,7 @@ module Openfactura
 
               # If error_data has an 'error' key with the Open Factura format, convert to DocumentError
               if error_data && (error_data[:error] || error_data["error"])
-                raise DocumentError.new(error_data)
+                raise Openfactura::DocumentError.new(error_data)
               end
             rescue JSON::ParserError
               # If JSON parsing fails, just raise the original ApiError (which will include the body)
@@ -104,7 +104,7 @@ module Openfactura
         path = "/v2/dte/document/#{token}/#{value_normalized}"
         response_data = @client.get(path)
 
-        DocumentQueryResponse.new(
+        Openfactura::DocumentQueryResponse.new(
           token: token,
           query_type: value_normalized,
           response_data: response_data
