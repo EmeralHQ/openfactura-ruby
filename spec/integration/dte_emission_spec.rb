@@ -53,7 +53,6 @@ RSpec.describe "Open Factura API Integration", :integration do
           name: "Producto de Prueba",
           quantity: 1,
           price: 10000,
-          amount: 10000,
           description: "Producto de prueba para integración"
         ),
         Openfactura::DSL::DteItem.new(
@@ -61,7 +60,6 @@ RSpec.describe "Open Factura API Integration", :integration do
           name: "Servicio de Prueba",
           quantity: 2,
           price: 5000,
-          amount: 10000,
           description: "Servicio de prueba para integración"
         )
       ]
@@ -179,8 +177,7 @@ RSpec.describe "Open Factura API Integration", :integration do
             line_number: 1,
             name: "Test",
             quantity: 1,
-            price: 1000,
-            amount: 1000
+            price: 1000
           )
         ],
         totals: Openfactura::DSL::Totals.new(
@@ -255,8 +252,7 @@ RSpec.describe "Open Factura API Integration", :integration do
             line_number: 1,
             name: "Test",
             quantity: 1,
-            price: 1000,
-            amount: 1000
+            price: 1000
           )
         ],
         totals: Openfactura::DSL::Totals.new(

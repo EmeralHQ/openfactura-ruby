@@ -17,8 +17,7 @@ RSpec.describe Openfactura::DSL::Dte do
       line_number: 1,
       name: "Producto",
       quantity: 1,
-      price: 2000,
-      amount: 2000
+      price: 2000
     )
   end
 
@@ -92,8 +91,8 @@ RSpec.describe Openfactura::DSL::Dte do
 
       it "converts items array of hashes to DteItem objects" do
         items_array = [
-          { line_number: 1, name: "Producto 1", quantity: 1, price: 1000, amount: 1000 },
-          { line_number: 2, name: "Producto 2", quantity: 2, price: 500, amount: 1000 }
+          { line_number: 1, name: "Producto 1", quantity: 1, price: 1000 },
+          { line_number: 2, name: "Producto 2", quantity: 2, price: 500 }
         ]
 
         dte = described_class.new(
