@@ -8,9 +8,9 @@ module Openfactura
     # Maps to API format when converted to hash
     class DteItem
       # Required fields for DteItem
-      REQUIRED_FIELDS = %i[line_number name quantity price].freeze
+      REQUIRED_FIELDS = %i[line_number name quantity price amount].freeze
 
-      attr_accessor :line_number, :name, :quantity, :price, :description, :exempt
+      attr_accessor :line_number, :name, :quantity, :price, :amount, :description, :exempt
 
       # Initialize DteItem from hash with standard project keys
       # @param attributes [Hash] Hash with standard keys (line_number, name, quantity, etc.)
@@ -19,6 +19,7 @@ module Openfactura
         @name = attributes[:name] || attributes["name"]
         @quantity = attributes[:quantity] || attributes["quantity"]
         @price = attributes[:price] || attributes["price"]
+        @amount = attributes[:amount] || attributes["amount"]
         @description = attributes[:description] || attributes["description"]
         @exempt = attributes.key?(:exempt) ? attributes[:exempt] : (attributes.key?("exempt") ? attributes["exempt"] : nil)
       end
@@ -33,7 +34,8 @@ module Openfactura
           NroLinDet: @line_number,
           NmbItem: @name,
           QtyItem: @quantity,
-          PrcItem: @price
+          PrcItem: @price,
+          MontoItem: @amount
         }
         item[:DscItem] = @description if @description
         item[:IndExe] = @exempt ? 1 : nil if @exempt
@@ -72,6 +74,7 @@ module Openfactura
           when :name then "name (NmbItem)"
           when :quantity then "quantity (QtyItem)"
           when :price then "price (PrcItem)"
+          when :amount then "amount (MontoItem)"
           else field.to_s
           end
         end.join(", ")

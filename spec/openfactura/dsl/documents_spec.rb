@@ -34,7 +34,8 @@ RSpec.describe Openfactura::DSL::Documents do
       line_number: 1,
       name: "Producto",
       quantity: 1,
-      price: 2000
+      price: 2000,
+      amount: 2000
     )
   end
 
@@ -261,7 +262,8 @@ RSpec.describe Openfactura::DSL::Documents do
               line_number: 1,
               name: "Test",
               quantity: 1,
-              price: 1000
+              price: 1000,
+              amount: 1000
             )
           ],
           totals: Openfactura::DSL::Totals.new(
@@ -401,7 +403,7 @@ RSpec.describe Openfactura::DSL::Documents do
         item = Openfactura::DSL::DteItem.new(
           line_number: 1,
           name: "Producto"
-          # Missing: quantity, price
+          # Missing: quantity, price, amount
         )
 
         dte = Openfactura::DSL::Dte.new(
@@ -419,6 +421,7 @@ RSpec.describe Openfactura::DSL::Documents do
           expect(error.message).to include("DteItem validation failed")
           expect(error.message).to include("quantity")
           expect(error.message).to include("price")
+          expect(error.message).to include("amount")
           expect(error.errors[:dte_item]).to be_an(Array)
         end
       end

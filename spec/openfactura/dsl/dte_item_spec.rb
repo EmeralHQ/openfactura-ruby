@@ -10,6 +10,7 @@ RSpec.describe Openfactura::DSL::DteItem do
         name: "Producto A",
         quantity: 2,
         price: 1000,
+        amount: 2000,
         description: "Descripción del producto",
         exempt: false
       )
@@ -18,6 +19,7 @@ RSpec.describe Openfactura::DSL::DteItem do
       expect(item.name).to eq("Producto A")
       expect(item.quantity).to eq(2)
       expect(item.price).to eq(1000)
+      expect(item.amount).to eq(2000)
       expect(item.description).to eq("Descripción del producto")
       expect(item.exempt).to eq(false)
     end
@@ -27,7 +29,8 @@ RSpec.describe Openfactura::DSL::DteItem do
         "line_number" => 1,
         "name" => "Producto",
         "quantity" => 1,
-        "price" => 2000
+        "price" => 2000,
+        "amount" => 2000
       )
 
       expect(item.line_number).to eq(1)
@@ -41,7 +44,8 @@ RSpec.describe Openfactura::DSL::DteItem do
         line_number: 1,
         name: "Producto",
         quantity: 1,
-        price: 2000
+        price: 2000,
+        amount: 2000
       )
 
       api_hash = item.to_api_hash
@@ -50,7 +54,8 @@ RSpec.describe Openfactura::DSL::DteItem do
         NroLinDet: 1,
         NmbItem: "Producto",
         QtyItem: 1,
-        PrcItem: 2000
+        PrcItem: 2000,
+        MontoItem: 2000
       })
     end
 
@@ -60,6 +65,7 @@ RSpec.describe Openfactura::DSL::DteItem do
         name: "Producto",
         quantity: 1,
         price: 2000,
+        amount: 2000,
         description: "Descripción"
       )
 
@@ -74,6 +80,7 @@ RSpec.describe Openfactura::DSL::DteItem do
         name: "Producto",
         quantity: 1,
         price: 2000,
+        amount: 2000,
         exempt: true
       )
 
@@ -88,6 +95,7 @@ RSpec.describe Openfactura::DSL::DteItem do
         name: "Producto",
         quantity: 1,
         price: 2000,
+        amount: 2000,
         exempt: false
       )
 
@@ -100,7 +108,7 @@ RSpec.describe Openfactura::DSL::DteItem do
       item = described_class.new(
         line_number: 1,
         name: "Producto"
-        # Missing: quantity, price
+        # Missing: quantity, price, amount
       )
 
       expect do
@@ -109,6 +117,7 @@ RSpec.describe Openfactura::DSL::DteItem do
         expect(error.message).to include("DteItem validation failed")
         expect(error.message).to include("quantity")
         expect(error.message).to include("price")
+        expect(error.message).to include("amount")
         expect(error.errors[:dte_item]).to be_an(Array)
       end
     end
@@ -118,7 +127,8 @@ RSpec.describe Openfactura::DSL::DteItem do
         line_number: nil,
         name: "Producto",
         quantity: 1,
-        price: 2000
+        price: 2000,
+        amount: 2000
       )
 
       expect do
@@ -133,7 +143,8 @@ RSpec.describe Openfactura::DSL::DteItem do
         line_number: 1,
         name: "",
         quantity: 1,
-        price: 2000
+        price: 2000,
+        amount: 2000
       )
 
       expect do
@@ -148,13 +159,15 @@ RSpec.describe Openfactura::DSL::DteItem do
         line_number: 1,
         name: "Producto",
         quantity: 0,
-        price: 0
+        price: 0,
+        amount: 0
       )
 
       expect do
         api_hash = item.to_api_hash
         expect(api_hash[:QtyItem]).to eq(0)
         expect(api_hash[:PrcItem]).to eq(0)
+        expect(api_hash[:MontoItem]).to eq(0)
       end.not_to raise_error
     end
 
@@ -163,7 +176,8 @@ RSpec.describe Openfactura::DSL::DteItem do
         line_number: 1,
         name: "Producto",
         quantity: 1,
-        price: 2000
+        price: 2000,
+        amount: 2000
       )
 
       expect do

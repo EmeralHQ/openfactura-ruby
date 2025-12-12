@@ -263,6 +263,7 @@ item = Openfactura::DSL::DteItem.new(
   name: "Producto",           # Required
   quantity: 1,                # Required
   price: 2000,                # Required
+  amount: 2000,               # Required
   description: "Descripción", # Optional
   exempt: false               # Optional: true for exempt items
 )
