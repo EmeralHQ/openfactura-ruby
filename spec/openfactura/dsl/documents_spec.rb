@@ -40,7 +40,6 @@ RSpec.describe Openfactura::DSL::Documents do
 
   let(:totals) do
     Openfactura::DSL::Totals.new(
-      total_amount: 2380,
       tax_rate: "19"
     )
   end
@@ -266,7 +265,6 @@ RSpec.describe Openfactura::DSL::Documents do
             )
           ],
           totals: Openfactura::DSL::Totals.new(
-            total_amount: 1190,
             tax_rate: "19"
           )
         )
@@ -283,7 +281,7 @@ RSpec.describe Openfactura::DSL::Documents do
         end
       end
 
-      it "raises ValidationError before sending request when totals is missing required fields" do
+      it "works with empty totals (no required fields)" do
         issuer = Openfactura::DSL::Issuer.new(
           rut: "76795561-8",
           business_name: "HAULMER SPA",
@@ -302,10 +300,8 @@ RSpec.describe Openfactura::DSL::Documents do
           commune: "Curicó"
         )
 
-        # Create totals with missing required field total_amount
-        totals = Openfactura::DSL::Totals.new(
-          # Missing: total_amount
-        )
+        # Create totals (no required fields)
+        totals = Openfactura::DSL::Totals.new({})
 
         dte = Openfactura::DSL::Dte.new(
           type: 33,
@@ -315,21 +311,24 @@ RSpec.describe Openfactura::DSL::Documents do
               line_number: 1,
               name: "Test",
               quantity: 1,
-              price: 1000,
-              amount: 1000
+              price: 1000
             )
           ],
           totals: totals
         )
 
+        allow(client).to receive(:post).and_return({
+          "success" => true,
+          "data" => {
+            "token" => "test-token",
+            "folio" => 123,
+            "idempotency_key" => "test-key"
+          }
+        })
+
         expect do
           documents.emit(dte: dte, issuer: issuer)
-        end.to raise_error(Openfactura::ValidationError) do |error|
-          expect(error.message).to include("Totals validation failed")
-          expect(error.message).to include("total_amount")
-          expect(error.message).to include("MntTotal")
-          expect(error.errors[:totals]).to be_an(Array)
-        end
+        end.not_to raise_error
       end
 
       it "raises ValidationError before sending request when issuer is missing required fields" do
@@ -362,7 +361,6 @@ RSpec.describe Openfactura::DSL::Documents do
             )
           ],
           totals: Openfactura::DSL::Totals.new(
-            total_amount: 1190,
             tax_rate: "19"
           ),
           issuer: issuer
@@ -411,7 +409,6 @@ RSpec.describe Openfactura::DSL::Documents do
           receiver: receiver,
           items: [item],
           totals: Openfactura::DSL::Totals.new(
-            total_amount: 1190,
             tax_rate: "19"
           )
         )

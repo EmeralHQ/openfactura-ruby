@@ -138,7 +138,6 @@ item = Openfactura::DSL::DteItem.new(
 
 # Build totals
 totals = Openfactura::DSL::Totals.new(
-  total_amount: 2380,
   tax_rate: "19"
 )
 
@@ -191,7 +190,6 @@ dte = Openfactura::DSL::Dte.new(
     }
   ],
   totals: {
-    total_amount: 2380,
     tax_rate: "19"
   }
 )
@@ -274,7 +272,6 @@ item = Openfactura::DSL::DteItem.new(
 
 ```ruby
 totals = Openfactura::DSL::Totals.new(
-  total_amount: 2380,        # Required
   tax_rate: "19",            # Optional
   period_amount: 2380,       # Optional
   amount_to_pay: 2380        # Optional
@@ -510,8 +507,7 @@ class InvoicesController < ApplicationController
       token: response.token,
       folio: response.folio,
       pdf_base64: response.pdf,
-      idempotency_key: response.idempotency_key,
-      total_amount: params[:total_amount]
+      idempotency_key: response.idempotency_key
     )
 
     render json: { invoice: invoice, token: response.token }
@@ -556,7 +552,6 @@ class InvoicesController < ApplicationController
 
   def build_totals_from_params
     Openfactura::DSL::Totals.new(
-      total_amount: params[:total_amount],
       tax_rate: "19"
     )
   end

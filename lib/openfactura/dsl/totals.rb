@@ -8,14 +8,13 @@ module Openfactura
     # Maps to API format when converted to hash
     class Totals
       # Required fields for Totals
-      REQUIRED_FIELDS = %i[total_amount].freeze
+      REQUIRED_FIELDS = [].freeze
 
-      attr_accessor :total_amount, :tax_rate, :period_amount, :amount_to_pay
+      attr_accessor :tax_rate, :period_amount, :amount_to_pay
 
       # Initialize Totals from hash with standard project keys
-      # @param attributes [Hash] Hash with standard keys (total_amount, tax_rate, etc.)
+      # @param attributes [Hash] Hash with standard keys (tax_rate, period_amount, etc.)
       def initialize(attributes = {})
-        @total_amount = attributes[:total_amount] || attributes["total_amount"]
         @tax_rate = attributes[:tax_rate] || attributes["tax_rate"]
         @period_amount = attributes[:period_amount] || attributes["period_amount"]
         @amount_to_pay = attributes[:amount_to_pay] || attributes["amount_to_pay"]
@@ -23,13 +22,10 @@ module Openfactura
 
       # Convert to API format hash (with Spanish/CamelCase keys)
       # @return [Hash] Totals structure in API format
-      # @raise [ValidationError] if required fields are missing
       def to_api_hash
         validate_required_fields!
 
-        totals = {
-          MntTotal: @total_amount
-        }
+        totals = {}
         totals[:TasaIVA] = @tax_rate.to_s if @tax_rate
         totals[:MontoPeriodo] = @period_amount if @period_amount
         totals[:VlrPagar] = @amount_to_pay if @amount_to_pay
@@ -38,7 +34,6 @@ module Openfactura
 
       # Alias for to_api_hash for compatibility
       # @return [Hash] Totals structure in API format
-      # @raise [ValidationError] if required fields are missing
       def to_h
         to_api_hash
       end
@@ -62,12 +57,7 @@ module Openfactura
 
         return if missing_fields.empty?
 
-        field_names = missing_fields.map do |field|
-          case field
-          when :total_amount then "total_amount (MntTotal)"
-          else field.to_s
-          end
-        end.join(", ")
+        field_names = missing_fields.map(&:to_s).join(", ")
 
         raise Openfactura::ValidationError.new(
           "Totals validation failed: Missing required fields: #{field_names}",

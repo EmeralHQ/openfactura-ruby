@@ -66,7 +66,6 @@ RSpec.describe "Open Factura API Integration", :integration do
 
       # Step 5: Create Totals
       totals = Openfactura::DSL::Totals.new(
-        total_amount: 23800,
         tax_rate: "19"
       )
 
@@ -82,7 +81,7 @@ RSpec.describe "Open Factura API Integration", :integration do
       expect(dte.type).to eq(33)
       expect(dte.receiver.rut).to eq("76430498-5")
       expect(dte.items.length).to eq(2)
-      expect(dte.totals.total_amount).to eq(23800)
+      expect(dte.totals).to be_a(Openfactura::DSL::Totals)
 
       # Step 7: Emit document requesting PDF, XML, FOLIO, TOKEN
       response = nil
@@ -179,7 +178,6 @@ RSpec.describe "Open Factura API Integration", :integration do
           )
         ],
         totals: Openfactura::DSL::Totals.new(
-          total_amount: 1190,
           tax_rate: "19"
         )
       )
@@ -252,7 +250,6 @@ RSpec.describe "Open Factura API Integration", :integration do
           )
         ],
         totals: Openfactura::DSL::Totals.new(
-          total_amount: 1190,
           tax_rate: "19"
         )
       )
