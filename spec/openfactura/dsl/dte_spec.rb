@@ -23,8 +23,6 @@ RSpec.describe Openfactura::DSL::Dte do
 
   let(:totals) do
     Openfactura::DSL::Totals.new(
-      net_amount: 2000,
-      tax_amount: 380,
       total_amount: 2380,
       tax_rate: "19"
     )
@@ -109,8 +107,6 @@ RSpec.describe Openfactura::DSL::Dte do
 
       it "converts totals hash to Totals object" do
         totals_hash = {
-          net_amount: 2000,
-          tax_amount: 380,
           total_amount: 2380,
           tax_rate: "19"
         }

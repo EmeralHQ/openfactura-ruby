@@ -31,8 +31,8 @@ module Openfactura
 
         {
           RUTRecep: @rut,
-          RznSocRecep: @business_name,
-          GiroRecep: @business_activity,
+          RznSocRecep: @business_name.to_s[0, 100],
+          GiroRecep: @business_activity.to_s[0, 40],
           Contacto: @contact,
           DirRecep: @address,
           CmnaRecep: @commune

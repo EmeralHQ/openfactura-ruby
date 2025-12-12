@@ -138,8 +138,6 @@ item = Openfactura::DSL::DteItem.new(
 
 # Build totals
 totals = Openfactura::DSL::Totals.new(
-  net_amount: 2000,
-  tax_amount: 380,
   total_amount: 2380,
   tax_rate: "19"
 )
@@ -193,8 +191,6 @@ dte = Openfactura::DSL::Dte.new(
     }
   ],
   totals: {
-    net_amount: 2000,
-    tax_amount: 380,
     total_amount: 2380,
     tax_rate: "19"
   }
@@ -251,13 +247,15 @@ dte = Openfactura::DSL::Dte.new(
 ```ruby
 receiver = Openfactura::DSL::Receiver.new(
   rut: "76430498-5",              # Required
-  business_name: "HOSTY SPA",    # Required
-  business_activity: "ACTIVIDADES DE CONSULTORIA",  # Required
+  business_name: "HOSTY SPA",    # Required (automatically truncated to 100 characters)
+  business_activity: "ACTIVIDADES DE CONSULTORIA",  # Required (automatically truncated to 40 characters)
   contact: "Juan Pérez",          # Required
   address: "ARTURO PRAT 527",      # Required
   commune: "Curicó"               # Required
 )
 ```
+
+**Note:** The `business_name` field is automatically truncated to 100 characters and `business_activity` is automatically truncated to 40 characters when converting to API format. The gem handles this truncation automatically, so you can provide longer values if needed.
 
 #### DteItem
 
@@ -277,9 +275,6 @@ item = Openfactura::DSL::DteItem.new(
 ```ruby
 totals = Openfactura::DSL::Totals.new(
   total_amount: 2380,        # Required
-  net_amount: 2000,          # Optional
-  tax_amount: 380,           # Optional
-  exempt_amount: 0,          # Optional
   tax_rate: "19",            # Optional
   period_amount: 2380,       # Optional
   amount_to_pay: 2380        # Optional
@@ -291,8 +286,8 @@ totals = Openfactura::DSL::Totals.new(
 ```ruby
 issuer = Openfactura::DSL::Issuer.new(
   rut: "76795561-8",                    # Required
-  business_name: "HAULMER SPA",         # Required
-  business_activity: "VENTA AL POR MENOR",  # Required
+  business_name: "HAULMER SPA",         # Required (automatically truncated to 100 characters)
+  business_activity: "VENTA AL POR MENOR",  # Required (automatically truncated to 80 characters)
   economic_activity_code: "479100",     # Required
   address: "ARTURO PRAT 527",           # Required
   commune: "Curicó",                    # Required
@@ -300,6 +295,8 @@ issuer = Openfactura::DSL::Issuer.new(
   phone: "+56912345678"                 # Optional
 )
 ```
+
+**Note:** The `business_name` field is automatically truncated to 100 characters and `business_activity` is automatically truncated to 80 characters when converting to API format. The gem handles this truncation automatically, so you can provide longer values if needed.
 
 ### Working with Organizations
 
@@ -559,8 +556,6 @@ class InvoicesController < ApplicationController
 
   def build_totals_from_params
     Openfactura::DSL::Totals.new(
-      net_amount: params[:net_amount],
-      tax_amount: params[:tax_amount],
       total_amount: params[:total_amount],
       tax_rate: "19"
     )

@@ -40,8 +40,6 @@ RSpec.describe Openfactura::DSL::Documents do
 
   let(:totals) do
     Openfactura::DSL::Totals.new(
-      net_amount: 2000,
-      tax_amount: 380,
       total_amount: 2380,
       tax_rate: "19"
     )
@@ -268,8 +266,6 @@ RSpec.describe Openfactura::DSL::Documents do
             )
           ],
           totals: Openfactura::DSL::Totals.new(
-            net_amount: 1000,
-            tax_amount: 190,
             total_amount: 1190,
             tax_rate: "19"
           )
@@ -308,8 +304,6 @@ RSpec.describe Openfactura::DSL::Documents do
 
         # Create totals with missing required field total_amount
         totals = Openfactura::DSL::Totals.new(
-          net_amount: 2000,
-          tax_amount: 380
           # Missing: total_amount
         )
 
@@ -368,8 +362,6 @@ RSpec.describe Openfactura::DSL::Documents do
             )
           ],
           totals: Openfactura::DSL::Totals.new(
-            net_amount: 1000,
-            tax_amount: 190,
             total_amount: 1190,
             tax_rate: "19"
           ),
@@ -419,8 +411,6 @@ RSpec.describe Openfactura::DSL::Documents do
           receiver: receiver,
           items: [item],
           totals: Openfactura::DSL::Totals.new(
-            net_amount: 1000,
-            tax_amount: 190,
             total_amount: 1190,
             tax_rate: "19"
           )

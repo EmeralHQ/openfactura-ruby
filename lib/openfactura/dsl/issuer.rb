@@ -33,8 +33,8 @@ module Openfactura
 
         issuer = {
           RUTEmisor: @rut,
-          RznSoc: @business_name,
-          GiroEmis: @business_activity,
+          RznSoc: @business_name.to_s[0, 100],
+          GiroEmis: @business_activity.to_s[0, 80],
           Acteco: @economic_activity_code.to_s,
           DirOrigen: @address,
           CmnaOrigen: @commune,

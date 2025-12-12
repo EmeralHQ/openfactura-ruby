@@ -143,5 +143,43 @@ RSpec.describe Openfactura::DSL::Issuer do
         issuer.to_api_hash
       end.not_to raise_error
     end
+
+    it "truncates business_name to 100 characters in API format" do
+      long_name = "A" * 120 # 120 characters
+      issuer = described_class.new(
+        rut: "76795561-8",
+        business_name: long_name,
+        business_activity: "VENTA AL POR MENOR",
+        economic_activity_code: "479100",
+        address: "ARTURO PRAT 527",
+        commune: "Curicó"
+      )
+
+      api_hash = issuer.to_api_hash
+
+      expect(api_hash[:RznSoc].length).to eq(100)
+      expect(api_hash[:RznSoc]).to eq("A" * 100)
+      # Original value should remain unchanged
+      expect(issuer.business_name).to eq(long_name)
+    end
+
+    it "truncates business_activity to 80 characters in API format" do
+      long_activity = "A" * 100 # 100 characters
+      issuer = described_class.new(
+        rut: "76795561-8",
+        business_name: "HAULMER SPA",
+        business_activity: long_activity,
+        economic_activity_code: "479100",
+        address: "ARTURO PRAT 527",
+        commune: "Curicó"
+      )
+
+      api_hash = issuer.to_api_hash
+
+      expect(api_hash[:GiroEmis].length).to eq(80)
+      expect(api_hash[:GiroEmis]).to eq("A" * 80)
+      # Original value should remain unchanged
+      expect(issuer.business_activity).to eq(long_activity)
+    end
   end
 end

@@ -66,8 +66,6 @@ RSpec.describe "Open Factura API Integration", :integration do
 
       # Step 5: Create Totals
       totals = Openfactura::DSL::Totals.new(
-        net_amount: 20000,
-        tax_amount: 3800,
         total_amount: 23800,
         tax_rate: "19"
       )
@@ -181,8 +179,6 @@ RSpec.describe "Open Factura API Integration", :integration do
           )
         ],
         totals: Openfactura::DSL::Totals.new(
-          net_amount: 1000,
-          tax_amount: 190,
           total_amount: 1190,
           tax_rate: "19"
         )
@@ -256,8 +252,6 @@ RSpec.describe "Open Factura API Integration", :integration do
           )
         ],
         totals: Openfactura::DSL::Totals.new(
-          net_amount: 1000,
-          tax_amount: 190,
           total_amount: 1190,
           tax_rate: "19"
         )

@@ -10,15 +10,12 @@ module Openfactura
       # Required fields for Totals
       REQUIRED_FIELDS = %i[total_amount].freeze
 
-      attr_accessor :total_amount, :net_amount, :tax_amount, :exempt_amount, :tax_rate, :period_amount, :amount_to_pay
+      attr_accessor :total_amount, :tax_rate, :period_amount, :amount_to_pay
 
       # Initialize Totals from hash with standard project keys
-      # @param attributes [Hash] Hash with standard keys (total_amount, net_amount, etc.)
+      # @param attributes [Hash] Hash with standard keys (total_amount, tax_rate, etc.)
       def initialize(attributes = {})
         @total_amount = attributes[:total_amount] || attributes["total_amount"]
-        @net_amount = attributes[:net_amount] || attributes["net_amount"]
-        @tax_amount = attributes[:tax_amount] || attributes["tax_amount"]
-        @exempt_amount = attributes[:exempt_amount] || attributes["exempt_amount"]
         @tax_rate = attributes[:tax_rate] || attributes["tax_rate"]
         @period_amount = attributes[:period_amount] || attributes["period_amount"]
         @amount_to_pay = attributes[:amount_to_pay] || attributes["amount_to_pay"]
@@ -33,9 +30,6 @@ module Openfactura
         totals = {
           MntTotal: @total_amount
         }
-        totals[:MntNeto] = @net_amount if @net_amount
-        totals[:IVA] = @tax_amount if @tax_amount
-        totals[:MntExe] = @exempt_amount if @exempt_amount
         totals[:TasaIVA] = @tax_rate.to_s if @tax_rate
         totals[:MontoPeriodo] = @period_amount if @period_amount
         totals[:VlrPagar] = @amount_to_pay if @amount_to_pay

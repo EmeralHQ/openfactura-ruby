@@ -105,5 +105,43 @@ RSpec.describe Openfactura::DSL::Receiver do
         receiver.to_api_hash
       end.not_to raise_error
     end
+
+    it "truncates business_name to 100 characters in API format" do
+      long_name = "A" * 120 # 120 characters
+      receiver = described_class.new(
+        rut: "76430498-5",
+        business_name: long_name,
+        business_activity: "ACTIVIDADES DE CONSULTORIA",
+        contact: "Juan Pérez",
+        address: "ARTURO PRAT 527",
+        commune: "Curicó"
+      )
+
+      api_hash = receiver.to_api_hash
+
+      expect(api_hash[:RznSocRecep].length).to eq(100)
+      expect(api_hash[:RznSocRecep]).to eq("A" * 100)
+      # Original value should remain unchanged
+      expect(receiver.business_name).to eq(long_name)
+    end
+
+    it "truncates business_activity to 40 characters in API format" do
+      long_activity = "A" * 50 # 50 characters
+      receiver = described_class.new(
+        rut: "76430498-5",
+        business_name: "HOSTY SPA",
+        business_activity: long_activity,
+        contact: "Juan Pérez",
+        address: "ARTURO PRAT 527",
+        commune: "Curicó"
+      )
+
+      api_hash = receiver.to_api_hash
+
+      expect(api_hash[:GiroRecep].length).to eq(40)
+      expect(api_hash[:GiroRecep]).to eq("A" * 40)
+      # Original value should remain unchanged
+      expect(receiver.business_activity).to eq(long_activity)
+    end
   end
 end
