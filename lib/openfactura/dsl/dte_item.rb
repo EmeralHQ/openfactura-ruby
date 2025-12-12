@@ -31,13 +31,13 @@ module Openfactura
         validate_required_fields!
 
         item = {
-          NroLinDet: @line_number,
-          NmbItem: @name,
-          QtyItem: @quantity,
-          PrcItem: @price,
-          MontoItem: @amount
+          NroLinDet: @line_number.to_i,
+          NmbItem: @name.to_s[0, 80],
+          QtyItem: @quantity.to_f.round(2),
+          PrcItem: @price.to_f.round(2),
+          MontoItem: @amount.to_i
         }
-        item[:DscItem] = @description if @description
+        item[:DscItem] = @description.to_s[0, 1000] if @description
         item[:IndExe] = @exempt ? 1 : nil if @exempt
         item.compact
       end

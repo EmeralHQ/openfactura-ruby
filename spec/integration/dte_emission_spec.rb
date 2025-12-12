@@ -2,6 +2,7 @@
 
 require "spec_helper"
 require "openfactura/sandbox_companies"
+require "fileutils"
 
 RSpec.describe "Open Factura API Integration", :integration do
   # Skip tests if API is not available
@@ -47,27 +48,39 @@ RSpec.describe "Open Factura API Integration", :integration do
       )
 
       # Step 4: Create DTE Items
+      # Item 1: 1 unidad a $12,345.50 = $12,345.50
+      # Item 2: 2 unidades a $8,765.25 = $17,530.50
+      # Net amount: $12,345.50 + $17,530.50 = $29,876.00
+      # Tax (19%): $29,876.00 * 0.19 = $5,676.44
+      # Total: $29,876.00 + $5,676.44 = $35,552.44
       items = [
         Openfactura::DSL::DteItem.new(
           line_number: 1,
           name: "Producto de Prueba",
           quantity: 1,
-          price: 10000,
-          amount: 10000,
+          price: 12345.50,
+          amount: 12346,
           description: "Producto de prueba para integración"
         ),
         Openfactura::DSL::DteItem.new(
           line_number: 2,
           name: "Servicio de Prueba",
           quantity: 2,
-          price: 5000,
-          amount: 10000,
+          price: 8765.25,
+          amount: 17531,
           description: "Servicio de prueba para integración"
         )
       ]
 
       # Step 5: Create Totals
+      # Calculated values:
+      # net_amount = 12345.50 + 17530.50 = 29876.00
+      # tax_amount = 29876.00 * 0.19 = 5676.44
+      # total_amount = 29876.00 + 5676.44 = 35552.44
       totals = Openfactura::DSL::Totals.new(
+        total_amount: 35554,
+        net_amount: 29876.00,
+        tax_amount: 5677,
         tax_rate: "19"
       )
 
@@ -83,17 +96,78 @@ RSpec.describe "Open Factura API Integration", :integration do
       expect(dte.type).to eq(33)
       expect(dte.receiver.rut).to eq("76430498-5")
       expect(dte.items.length).to eq(2)
-      expect(dte.totals).to be_a(Openfactura::DSL::Totals)
+      expect(dte.totals.total_amount).to eq(35554)
 
       # Step 7: Emit document requesting PDF, XML, FOLIO, TOKEN
       response = nil
-      expect do
+      begin
         response = Openfactura.documents.emit(
           dte: dte,
           issuer: issuer,
           response: ["PDF", "XML", "FOLIO", "TOKEN"]
         )
-      end.not_to raise_error
+      rescue => e
+        # Log error to file for debugging
+        tmp_dir = File.join(__dir__, "..", "tmp")
+        FileUtils.mkdir_p(tmp_dir) unless Dir.exist?(tmp_dir)
+
+        log_filename = File.join(tmp_dir, "dte_emission_error_#{Time.now.strftime("%Y%m%d_%H%M%S")}.log")
+        error_log = File.open(log_filename, "w", encoding: "UTF-8")
+
+        error_log.puts "=" * 80
+        error_log.puts "DTE EMISSION ERROR LOG"
+        error_log.puts "=" * 80
+        error_log.puts "Timestamp: #{Time.now.strftime("%Y-%m-%d %H:%M:%S %z")}"
+        error_log.puts ""
+        error_log.puts "Error Class: #{e.class}"
+        error_log.puts "Error Message: #{e.message}"
+        error_log.puts ""
+        error_log.puts "Backtrace:"
+        error_log.puts "-" * 80
+        e.backtrace.each { |line| error_log.puts "  #{line}" }
+        error_log.puts ""
+        error_log.puts "=" * 80
+        error_log.puts "DTE CONTEXT"
+        error_log.puts "=" * 80
+        error_log.puts "Type: #{dte.type}"
+        error_log.puts "Emission Date: #{dte.emission_date}"
+        error_log.puts "Receiver RUT: #{dte.receiver.rut}"
+        error_log.puts "Receiver Name: #{dte.receiver.business_name}"
+        error_log.puts "Issuer RUT: #{issuer.rut}"
+        error_log.puts "Issuer Name: #{issuer.business_name}"
+        error_log.puts "Items Count: #{dte.items.length}"
+        error_log.puts ""
+        error_log.puts "DTE Items:"
+        dte.items.each_with_index do |item, index|
+          error_log.puts "  Item #{index + 1}:"
+          error_log.puts "    Line Number: #{item.line_number}"
+          error_log.puts "    Name: #{item.name}"
+          error_log.puts "    Quantity: #{item.quantity}"
+          error_log.puts "    Price: #{item.price}"
+          error_log.puts "    Amount: #{item.amount}" if item.respond_to?(:amount)
+        end
+        error_log.puts ""
+        error_log.puts "DTE API Hash (first 2000 chars):"
+        error_log.puts "-" * 80
+        begin
+          dte_hash = dte.to_api_hash
+          dte_hash_str = dte_hash.inspect
+          error_log.puts dte_hash_str[0..2000]
+          error_log.puts "..." if dte_hash_str.length > 2000
+        rescue => hash_error
+          error_log.puts "Error generating DTE hash: #{hash_error.message}"
+        end
+        error_log.puts ""
+        error_log.puts "=" * 80
+        error_log.puts "END OF ERROR LOG"
+        error_log.puts "=" * 80
+
+        error_log.close
+        puts "\n✗ Error guardado en: #{log_filename}"
+
+        # Re-raise the error so the test fails
+        raise e
+      end
 
       # Step 8: Verify response structure
       expect(response).to be_a(Openfactura::DocumentResponse)
@@ -129,6 +203,23 @@ RSpec.describe "Open Factura API Integration", :integration do
       expect(xml_content).to include("DTE")
       expect(xml_content).to include("Encabezado")
       expect(xml_content).to include("Detalle")
+
+      # Step 11.5: Save PDF and XML to spec/tmp for manual verification
+      tmp_dir = File.join(__dir__, "..", "tmp")
+      FileUtils.mkdir_p(tmp_dir) unless Dir.exist?(tmp_dir)
+
+      # Generate descriptive filenames with folio and token
+      timestamp = Time.now.strftime("%Y%m%d_%H%M%S")
+      pdf_filename = File.join(tmp_dir, "dte_folio_#{response.folio}_token_#{response.token[0..8]}_#{timestamp}.pdf")
+      xml_filename = File.join(tmp_dir, "dte_folio_#{response.folio}_token_#{response.token[0..8]}_#{timestamp}.xml")
+
+      # Write PDF file
+      File.binwrite(pdf_filename, pdf_binary)
+      puts "\n✓ PDF guardado en: #{pdf_filename}"
+
+      # Write XML file
+      File.write(xml_filename, xml_content, encoding: "UTF-8")
+      puts "✓ XML guardado en: #{xml_filename}"
 
       # Step 12: Verify response hash
       response_hash = response.to_h
@@ -181,6 +272,9 @@ RSpec.describe "Open Factura API Integration", :integration do
           )
         ],
         totals: Openfactura::DSL::Totals.new(
+          total_amount: 1190,
+          net_amount: 1000,
+          tax_amount: 190,
           tax_rate: "19"
         )
       )
@@ -254,6 +348,9 @@ RSpec.describe "Open Factura API Integration", :integration do
           )
         ],
         totals: Openfactura::DSL::Totals.new(
+          total_amount: 1190,
+          net_amount: 1000,
+          tax_amount: 190,
           tax_rate: "19"
         )
       )

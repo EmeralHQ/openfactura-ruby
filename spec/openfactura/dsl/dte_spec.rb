@@ -24,6 +24,7 @@ RSpec.describe Openfactura::DSL::Dte do
 
   let(:totals) do
     Openfactura::DSL::Totals.new(
+      total_amount: 2380,
       tax_rate: "19"
     )
   end
@@ -107,6 +108,7 @@ RSpec.describe Openfactura::DSL::Dte do
 
       it "converts totals hash to Totals object" do
         totals_hash = {
+          total_amount: 2380,
           tax_rate: "19"
         }
 
@@ -118,6 +120,7 @@ RSpec.describe Openfactura::DSL::Dte do
         )
 
         expect(dte.totals).to be_a(Openfactura::DSL::Totals)
+        expect(dte.totals.total_amount).to eq(2380)
       end
 
       it "accepts issuer object" do
