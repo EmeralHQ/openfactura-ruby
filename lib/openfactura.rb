@@ -4,6 +4,7 @@ require "zeitwerk"
 
 loader = Zeitwerk::Loader.for_gem
 loader.ignore("#{__dir__}/generators")
+loader.ignore("#{__dir__}/openfactura/resources")
 loader.inflector.inflect("dsl" => "DSL")
 loader.setup
 
