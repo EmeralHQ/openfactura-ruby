@@ -4,7 +4,7 @@ require "httparty"
 require "json"
 require "net/http"
 require_relative "config"
-require_relative "errors"
+require_relative "error"
 
 module Openfactura
   # HTTP client for Open Factura API

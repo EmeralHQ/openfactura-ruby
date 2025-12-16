@@ -11,7 +11,7 @@ loader.setup
 # This is needed because:
 # 1. DocumentError is in resources/ but not namespaced under Resources
 # 2. Other error classes need to be available immediately for rescue clauses
-require_relative "openfactura/errors"
+require_relative "openfactura/error"
 require_relative "openfactura/resources/document_error"
 
 # Load Railtie if Rails is available

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "dry-configurable"
-require_relative "errors"
+require_relative "error"
 
 module Openfactura
   # Configuration class for Open Factura SDK
