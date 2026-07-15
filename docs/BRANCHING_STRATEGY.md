@@ -46,6 +46,35 @@ flowchart LR
 
 No hay deploy automático: mergear a `main` **no** publica nada. Publicar es un acto explícito (ver abajo).
 
+## CI y protección de `main`
+
+`main` está protegida por un ruleset de GitHub. Lo que la regla exige es exactamente lo que el flujo
+de arriba pide, pero sin depender de que alguien se acuerde:
+
+| Regla | Por qué |
+|-------|---------|
+| No se puede pushear directo a `main` | Todo entra por PR |
+| Checks obligatorios: `Test (Ruby 3.1)`…`(3.4)`, `RuboCop`, `Build gem` | `main` siempre publicable |
+| Branch actualizada con `main` antes de mergear | Evita el merge semánticamente roto que ningún PR vio |
+| Conversaciones resueltas antes de mergear | Un comentario abierto no se pierde en el squash |
+| Solo squash merge | Un commit por PR (`allow_merge_commit` y `allow_rebase_merge` están apagados) |
+| Prohibido borrar `main` y forzar push | Un tag publicado tiene que seguir siendo alcanzable |
+
+**La aprobación no es obligatoria**: hoy el equipo es chico y exigirla dejaría a cada autor esperando
+—nadie puede aprobar su propio PR—. El listón automático es la CI, no un sello humano. Que no sea
+obligatoria no significa que sobre: si el PR toca la API pública o el formato del DTE, pide revisión.
+Cuando el equipo crezca, subir esto a 1 aprobación es cambiar un número en el ruleset.
+
+La CI vive en [.github/workflows/ci.yml](../.github/workflows/ci.yml) y corre en cada PR y push a
+`main`: `bundle exec rspec` sobre la matriz Ruby 3.1–3.4 (el rango que promete el gemspec),
+`bundle exec rubocop` y `bundle exec rake build` —que instala y carga el `.gem` resultante solo con
+sus dependencias de runtime, para que un gemspec roto se vea acá y no durante el release—.
+
+Los specs `:integration` **no** corren en CI: pegan al sandbox real y necesitan credenciales.
+`spec_helper` los excluye por defecto; se corren a mano con `RUN_INTEGRATION=1`.
+
+La CI tiene permisos de solo lectura y no publica nada: publicar sigue siendo un tag + `rake release`.
+
 ## Release
 
 El release de un gem es un tag, no un merge de una rama de larga vida. Lo ejecuta el skill `release`.

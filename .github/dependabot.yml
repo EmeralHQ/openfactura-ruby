@@ -1,0 +1,20 @@
+version: 2
+updates:
+  # Las actions se referencian por tag mutable (@v4): sin esto, un major nuevo
+  # pasa desapercibido y un tag movido entra sin revisión.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore(ci)"
+    labels: [ dependencies ]
+
+  # Sin Gemfile.lock versionado, esto vigila los rangos del gemspec.
+  - package-ecosystem: bundler
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore(deps)"
+    labels: [ dependencies ]

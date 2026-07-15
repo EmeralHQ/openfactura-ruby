@@ -35,7 +35,7 @@ RSpec.describe Openfactura::DSL::Dte do
         dte = described_class.new(
           type: 33,
           receiver: receiver,
-          items: [item],
+          items: [ item ],
           totals: totals
         )
 
@@ -47,12 +47,12 @@ RSpec.describe Openfactura::DSL::Dte do
       end
 
       it "defaults folio to 0" do
-        dte = described_class.new(type: 33, receiver: receiver, items: [item], totals: totals)
+        dte = described_class.new(type: 33, receiver: receiver, items: [ item ], totals: totals)
         expect(dte.folio).to eq(0)
       end
 
       it "defaults emission_date to today" do
-        dte = described_class.new(type: 33, receiver: receiver, items: [item], totals: totals)
+        dte = described_class.new(type: 33, receiver: receiver, items: [ item ], totals: totals)
         expect(dte.emission_date).to eq(Date.today.strftime("%Y-%m-%d"))
       end
 
@@ -60,7 +60,7 @@ RSpec.describe Openfactura::DSL::Dte do
         dte = described_class.new(
           type: 33,
           receiver: receiver,
-          items: [item],
+          items: [ item ],
           totals: totals,
           emission_date: "2024-01-15"
         )
@@ -80,7 +80,7 @@ RSpec.describe Openfactura::DSL::Dte do
         dte = described_class.new(
           type: 33,
           receiver: receiver_hash,
-          items: [item],
+          items: [ item ],
           totals: totals
         )
 
@@ -115,7 +115,7 @@ RSpec.describe Openfactura::DSL::Dte do
         dte = described_class.new(
           type: 33,
           receiver: receiver,
-          items: [item],
+          items: [ item ],
           totals: totals_hash
         )
 
@@ -137,7 +137,7 @@ RSpec.describe Openfactura::DSL::Dte do
         dte = described_class.new(
           type: 33,
           receiver: receiver,
-          items: [item],
+          items: [ item ],
           totals: totals,
           issuer: issuer
         )
@@ -149,13 +149,13 @@ RSpec.describe Openfactura::DSL::Dte do
     context "with invalid DTE type" do
       it "raises ArgumentError for invalid type" do
         expect do
-          described_class.new(type: 99, receiver: receiver, items: [item], totals: totals)
+          described_class.new(type: 99, receiver: receiver, items: [ item ], totals: totals)
         end.to raise_error(ArgumentError, /Invalid DTE type/)
       end
 
       it "raises ArgumentError when type is nil" do
         expect do
-          described_class.new(type: nil, receiver: receiver, items: [item], totals: totals)
+          described_class.new(type: nil, receiver: receiver, items: [ item ], totals: totals)
         end.to raise_error(ArgumentError, "type is required")
       end
     end
@@ -166,7 +166,7 @@ RSpec.describe Openfactura::DSL::Dte do
           described_class.new(
             type: 33,
             receiver: receiver,
-            items: [item],
+            items: [ item ],
             totals: totals,
             emission_date: "2003-03-31"
           )
@@ -178,7 +178,7 @@ RSpec.describe Openfactura::DSL::Dte do
           described_class.new(
             type: 33,
             receiver: receiver,
-            items: [item],
+            items: [ item ],
             totals: totals,
             emission_date: "2051-01-01"
           )
@@ -190,7 +190,7 @@ RSpec.describe Openfactura::DSL::Dte do
           described_class.new(
             type: 33,
             receiver: receiver,
-            items: [item],
+            items: [ item ],
             totals: totals,
             emission_date: "2024/01/15"
           )
@@ -202,7 +202,7 @@ RSpec.describe Openfactura::DSL::Dte do
           described_class.new(
             type: 33,
             receiver: receiver,
-            items: [item],
+            items: [ item ],
             totals: totals,
             emission_date: "2024-02-30"
           )
@@ -218,7 +218,7 @@ RSpec.describe Openfactura::DSL::Dte do
         folio: 123,
         emission_date: "2024-01-15",
         receiver: receiver,
-        items: [item],
+        items: [ item ],
         totals: totals
       )
 
@@ -249,7 +249,7 @@ RSpec.describe Openfactura::DSL::Dte do
       dte = described_class.new(
         type: 33,
         receiver: receiver,
-        items: [item],
+        items: [ item ],
         totals: totals,
         issuer: issuer
       )
@@ -265,7 +265,7 @@ RSpec.describe Openfactura::DSL::Dte do
       dte = described_class.new(
         type: 33,
         receiver: receiver,
-        items: [item],
+        items: [ item ],
         totals: totals,
         purchase_transaction_type: "1",
         sale_transaction_type: "2",
@@ -282,14 +282,14 @@ RSpec.describe Openfactura::DSL::Dte do
 
   describe "#type=" do
     it "validates type when setting" do
-      dte = described_class.new(type: 33, receiver: receiver, items: [item], totals: totals)
+      dte = described_class.new(type: 33, receiver: receiver, items: [ item ], totals: totals)
 
       expect { dte.type = 61 }.not_to raise_error
       expect(dte.type).to eq(61)
     end
 
     it "raises ArgumentError for invalid type" do
-      dte = described_class.new(type: 33, receiver: receiver, items: [item], totals: totals)
+      dte = described_class.new(type: 33, receiver: receiver, items: [ item ], totals: totals)
 
       expect { dte.type = 99 }.to raise_error(ArgumentError, /Invalid DTE type/)
     end
@@ -297,20 +297,20 @@ RSpec.describe Openfactura::DSL::Dte do
 
   describe "#emission_date=" do
     it "validates emission_date when setting" do
-      dte = described_class.new(type: 33, receiver: receiver, items: [item], totals: totals)
+      dte = described_class.new(type: 33, receiver: receiver, items: [ item ], totals: totals)
 
       expect { dte.emission_date = "2024-06-15" }.not_to raise_error
       expect(dte.emission_date).to eq("2024-06-15")
     end
 
     it "raises ArgumentError for invalid date format" do
-      dte = described_class.new(type: 33, receiver: receiver, items: [item], totals: totals)
+      dte = described_class.new(type: 33, receiver: receiver, items: [ item ], totals: totals)
 
       expect { dte.emission_date = "2024/06/15" }.to raise_error(ArgumentError, /Expected format: YYYY-MM-DD/)
     end
 
     it "raises ArgumentError for date out of range" do
-      dte = described_class.new(type: 33, receiver: receiver, items: [item], totals: totals)
+      dte = described_class.new(type: 33, receiver: receiver, items: [ item ], totals: totals)
 
       expect { dte.emission_date = "2000-01-01" }.to raise_error(ArgumentError, /Date must be >= 2003-04-01/)
     end

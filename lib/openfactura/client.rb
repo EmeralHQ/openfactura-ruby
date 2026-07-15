@@ -96,10 +96,10 @@ module Openfactura
         # For 400 and other client errors, try to extract meaningful error message
         error_message = extract_error_message(response.body)
         base_message = if error_message
-                         "API request failed with status #{response.code}: #{error_message}"
-                       else
-                         "API request failed with status #{response.code}"
-                       end
+          "API request failed with status #{response.code}: #{error_message}"
+        else
+          "API request failed with status #{response.code}"
+        end
         raise Openfactura::ApiError.new(
           base_message,
           status_code: response.code,

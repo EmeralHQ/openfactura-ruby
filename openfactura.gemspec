@@ -5,8 +5,8 @@ require_relative "lib/openfactura/version"
 Gem::Specification.new do |spec|
   spec.name = "openfactura"
   spec.version = Openfactura::VERSION
-  spec.authors = ["Carlos Torrealba"]
-  spec.email = ["carlos@emeral.cl"]
+  spec.authors = [ "Carlos Torrealba" ]
+  spec.email = [ "carlos@emeral.cl" ]
 
   spec.summary = "Ruby SDK with DSL for Open Factura API"
   spec.description = "A Ruby gem providing a DSL interface for interacting with the Open Factura API, supporting electronic document (DTE) emission and organization management."
@@ -30,7 +30,7 @@ Gem::Specification.new do |spec|
   end
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
-  spec.require_paths = ["lib"]
+  spec.require_paths = [ "lib" ]
 
   # Runtime dependencies
   spec.add_dependency "httparty", "~> 0.21"

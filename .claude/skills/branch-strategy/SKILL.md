@@ -61,8 +61,13 @@ git checkout -b feature/<user>/<slug> origin/main   # o fix/<user>/<slug>, docs/
 git push -u origin <rama>
 ```
 
-Antes de abrir el PR, verifica localmente (no las pre-apruebo, pídelas si hace falta):
-`bundle exec rspec` y `bundle exec rubocop`. Si algo falla, arréglalo o dilo — no abras el PR en rojo.
+Antes de abrir el PR, corre localmente lo mismo que exige la CI (no las pre-apruebo, pídelas si hace
+falta): `bundle exec rspec`, `bundle exec rubocop` y `bundle exec rake build`. Si algo falla, arréglalo
+o dilo — no abras el PR en rojo.
+
+`main` está protegida: sin los checks verdes el PR no se puede mergear, y el merge es squash-only. No
+intentes saltarte la protección (`--admin`, push directo) ni desactivarla; si un check está roto o
+sobra, eso se discute, no se rodea.
 
 Crear PR con base `main` → §4.
 
