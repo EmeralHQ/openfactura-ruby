@@ -4,16 +4,11 @@ require "zeitwerk"
 
 loader = Zeitwerk::Loader.for_gem
 loader.ignore("#{__dir__}/generators")
-loader.ignore("#{__dir__}/openfactura/resources")
+loader.collapse("#{__dir__}/openfactura/resources")
 loader.inflector.inflect("dsl" => "DSL")
 loader.setup
 
-# Explicitly require error classes to ensure they're available for rescue clauses
-# This is needed because:
-# 1. DocumentError is in resources/ but not namespaced under Resources
-# 2. Other error classes need to be available immediately for rescue clauses
 require_relative "openfactura/error"
-require_relative "openfactura/resources/document_error"
 
 # Load Railtie if Rails is available
 if defined?(Rails)
