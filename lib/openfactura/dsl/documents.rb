@@ -23,7 +23,7 @@ module Openfactura
       # @param send_email [Hash] Email sending configuration
       # @param idempotency_key [String] Idempotency key for safe retries. If nil, will be auto-generated
       # @return [DocumentResponse] Response with token, folio, PDF, XML, idempotency_key, etc.
-      def emit(dte:, issuer:, response: ["TOKEN"], custom: nil, iva_exceptional: nil, send_email: nil, idempotency_key: nil)
+      def emit(dte:, issuer:, response: [ "TOKEN" ], custom: nil, iva_exceptional: nil, send_email: nil, idempotency_key: nil)
         raise ArgumentError, "dte must be a Dte object" unless dte.is_a?(Dte)
         raise ArgumentError, "issuer must be an Issuer object" unless issuer.is_a?(Issuer)
 
@@ -51,12 +51,10 @@ module Openfactura
           if e.response_body
             begin
               error_data = if e.response_body.is_a?(Hash)
-                             e.response_body
-                           elsif e.response_body.is_a?(String)
-                             JSON.parse(e.response_body)
-                           else
-                             nil
-                           end
+                e.response_body
+              elsif e.response_body.is_a?(String)
+                JSON.parse(e.response_body)
+              end
 
               # If error_data has an 'error' key with the Open Factura format, convert to DocumentError
               if error_data && (error_data[:error] || error_data["error"])

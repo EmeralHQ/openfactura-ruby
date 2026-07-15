@@ -1,4 +1,7 @@
 /.bundle/
+# Este gem soporta Ruby >= 3.1: fijar el lockfile obliga a todas las versiones a
+# una misma resolución y rompe la matriz de CI. Cada Ruby resuelve la suya.
+/Gemfile.lock
 /.yardoc
 /_yardoc/
 /coverage/

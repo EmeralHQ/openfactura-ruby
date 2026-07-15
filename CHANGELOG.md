@@ -10,9 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Shared Emeral workflow skills for Claude Code: `branch-strategy`, `release` and `commit`
 - Branching strategy doc (`docs/BRANCHING_STRATEGY.md`) and pull request template
+- GitHub Actions CI (`.github/workflows/ci.yml`): RSpec on Ruby 3.1–3.4, RuboCop, and a gem
+  build that installs and loads the packaged `.gem` with runtime dependencies only
+- Dependabot for `github-actions` and `bundler`
 
 ### Changed
 - Expanded `CLAUDE.md` with testing, RuboCop, backward-compatibility and secret-handling rules
+- Integration specs no longer run in the default `bundle exec rspec` suite. They hit the real
+  sandbox and need credentials; opt in with `RUN_INTEGRATION=1` or `--tag integration`
+
+### Fixed
+- RuboCop never loaded its configuration: `rubocop-rails-omakase` ships a config file with no
+  loadable Ruby, so `require:` raised `LoadError` and every run aborted. Now uses `inherit_gem`,
+  and the 84 layout offenses it had been hiding are corrected
+- `Gemfile.lock` is no longer versioned. It pinned `zeitwerk`, `activesupport`, `multi_xml` and
+  `erb` to versions requiring Ruby >= 3.2, which made `bundle install` fail on Ruby 3.1 even
+  though the gemspec promises `>= 3.1.0`. Each Ruby version now resolves its own set
 
 ## [0.1.0] - 2025-11-10
 

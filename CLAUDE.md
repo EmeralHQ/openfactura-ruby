@@ -15,10 +15,15 @@ consumidores fuera de nuestro control y romperla cuesta un release.
 
 - Tests unitarios: `bundle exec rspec` (WebMock bloquea red)
 - Un archivo / un ejemplo: `bundle exec rspec spec/path/to/file_spec.rb` · `...:42`
-- Tests de integración (sandbox real): specs con tag `:integration` en `spec/integration/`
+- Tests de integración (sandbox real): `RUN_INTEGRATION=1 bundle exec rspec spec/integration` — fuera
+  de la suite por defecto (`spec_helper` los excluye), requieren credenciales
 - Lint: `bundle exec rubocop` (`-a` para autocorregir)
+- Build del gem: `bundle exec rake build`
 - Instalar local: `bundle exec rake install`
 - Publicar: `bundle exec rake release` — **irreversible**, ver skill `release`
+
+Los tres que corre la CI en cada PR son `rspec`, `rubocop` y `rake build`. Si pasan localmente, el PR
+sale verde.
 
 ## Skills del proyecto (usarlos — son la fuente de verdad)
 
@@ -62,8 +67,11 @@ El gem está en `0.x`: un breaking change es **minor**, no major. Desde `1.0.0`,
   `ValidationError` cuando falta un `REQUIRED_FIELDS`.
 - Los specs son el único lugar (junto a `to_api_hash`) donde aparecen claves en español SII —
   ahí es correcto y esperado: verifican el contrato real con la API.
-- Los `:integration` pegan al sandbox real y necesitan credenciales: no corren en la suite por defecto
-  y no los uses para verificar un cambio a menos que el usuario lo pida.
+- Los `:integration` pegan al sandbox real y necesitan credenciales: `spec_helper` los excluye de la
+  suite por defecto (opt-in con `RUN_INTEGRATION=1` o `--tag integration`). No los uses para verificar
+  un cambio a menos que el usuario lo pida.
+- La suite corre en Ruby 3.1–3.4 en CI: el gemspec promete `>= 3.1.0`. Por eso `Gemfile.lock` **no** se
+  versiona — fijarlo arrastra a todos los Ruby a una resolución que solo sirve en el más nuevo.
 
 ## AI Behavior Rules
 
@@ -78,7 +86,9 @@ El gem está en `0.x`: un breaking change es **minor**, no major. Desde `1.0.0`,
 
 - Corre `bundle exec rubocop <path>` una vez al final de la tarea. Arregla todas las ofensas antes de terminar.
 - `bundle exec rubocop -a <path>` para las autocorregibles de Layout/Style.
-- Config Omakase (`rubocop-rails-omakase`). `spec/` y `lib/generators/` están excluidos de `Metrics/BlockLength`.
+- Config Omakase (`rubocop-rails-omakase`), cargada con `inherit_gem` — es un gem de solo-config, con
+  `require:` explota. `spec/` y `lib/generators/` están excluidos de `Metrics/BlockLength`.
+- Omakase pide espacio dentro de los brackets de array (`[ "TOKEN" ]`); no lo "arregles" al revés.
 
 ### Compatibilidad (lo crítico acá)
 

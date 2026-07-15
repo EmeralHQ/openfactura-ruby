@@ -50,7 +50,7 @@ RSpec.describe Openfactura::DSL::Documents do
     Openfactura::DSL::Dte.new(
       type: 33,
       receiver: receiver,
-      items: [item],
+      items: [ item ],
       totals: totals
     )
   end
@@ -73,7 +73,7 @@ RSpec.describe Openfactura::DSL::Documents do
           headers: hash_including("Idempotency-Key" => anything)
         ).and_return(success_response)
 
-        response = documents.emit(dte: dte, issuer: issuer, response: ["PDF", "XML", "FOLIO", "TOKEN"])
+        response = documents.emit(dte: dte, issuer: issuer, response: [ "PDF", "XML", "FOLIO", "TOKEN" ])
 
         expect(response).to be_a(Openfactura::DocumentResponse)
         expect(response.token).to eq("test-token-123")
@@ -123,7 +123,7 @@ RSpec.describe Openfactura::DSL::Documents do
       end
 
       it "includes iva_exceptional in request body" do
-        iva_exceptional = ["ARTESANO"]
+        iva_exceptional = [ "ARTESANO" ]
 
         expect(client).to receive(:post).with(
           "/v2/dte/document",
@@ -154,7 +154,7 @@ RSpec.describe Openfactura::DSL::Documents do
         dte_without_issuer = Openfactura::DSL::Dte.new(
           type: 33,
           receiver: receiver,
-          items: [item],
+          items: [ item ],
           totals: totals
         )
 
@@ -411,7 +411,7 @@ RSpec.describe Openfactura::DSL::Documents do
         dte = Openfactura::DSL::Dte.new(
           type: 33,
           receiver: receiver,
-          items: [item],
+          items: [ item ],
           totals: Openfactura::DSL::Totals.new(
             total_amount: 1190,
             tax_rate: "19"

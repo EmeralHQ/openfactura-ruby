@@ -1,23 +1,18 @@
-# RuboCop configuration following Omakase Rails style
-require:
-  - rubocop-rails-omakase
+# RuboCop configuration following Omakase Rails style.
+# rubocop-rails-omakase ships only a config file, no loadable Ruby: `require` raises LoadError.
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
 
 AllCops:
   TargetRubyVersion: 3.1
   NewCops: enable
   Exclude:
     - 'bin/**/*'
+    - 'pkg/**/*'
     - 'vendor/**/*'
     - 'spec/spec_helper.rb'
-    - 'spec/rails_helper.rb'
-    - 'db/**/*'
-    - 'config/**/*'
     - 'lib/generators/**/*'
     - 'sig/**/*'
-
-# Omakase-style configuration
-Rails:
-  Enabled: true
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes
