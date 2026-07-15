@@ -275,12 +275,29 @@ item = Openfactura::DSL::DteItem.new(
 
 ```ruby
 totals = Openfactura::DSL::Totals.new(
-  total_amount: 2380,        # Required
-  tax_rate: "19",            # Optional
-  period_amount: 2380,       # Optional
-  amount_to_pay: 2380        # Optional
+  total_amount: 2380,        # Required (MntTotal) — the only field required for every DTE type
+  net_amount: 2000,          # Optional (MntNeto)
+  tax_amount: 380,           # Optional (IVA)
+  exempt_amount: 0,          # Optional (MntExe)
+  tax_rate: "19",            # Optional (TasaIVA)
+  period_amount: 2380,       # Optional (MontoPeriodo)
+  amount_to_pay: 2380        # Optional (VlrPagar)
 )
 ```
+
+`total_amount` is the only field the SII requires across all document types, so it is the
+only one this gem enforces. The remaining fields are *conditional*: which ones you must send
+— and which ones you must **not** send — depends on the DTE type:
+
+| DTE type | Totals |
+|---|---|
+| Affected invoice (33), debit/credit note (56/61), dispatch note (52) | `net_amount`, `tax_rate`, `tax_amount`, `total_amount` |
+| Exempt invoice (34) | `exempt_amount` and `total_amount`, **without** `net_amount`/`tax_amount` |
+| Export (110/111/112) | `total_amount` (+ `exempt_amount`), **without** `net_amount`/`tax_amount`/`tax_rate` |
+
+Sending a field that does not apply to the type is rejected by the API with an `OF-10`
+error. The gem does not currently validate this per type — see the SII document format for
+the full conditionality matrix.
 
 #### Issuer
 

@@ -86,6 +86,58 @@ RSpec.describe Openfactura::DSL::Totals do
       expect(api_hash[:TasaIVA]).to eq("19")
     end
 
+    it "converts a float tax_rate without significant decimals to an integer string" do
+      totals = described_class.new(
+        total_amount: 2380,
+        tax_rate: 19.0
+      )
+
+      api_hash = totals.to_api_hash
+
+      expect(api_hash[:TasaIVA]).to eq("19")
+    end
+
+    it "keeps significant decimals in tax_rate" do
+      totals = described_class.new(
+        total_amount: 2380,
+        tax_rate: 19.5
+      )
+
+      api_hash = totals.to_api_hash
+
+      expect(api_hash[:TasaIVA]).to eq("19.5")
+    end
+
+    it "keeps a string tax_rate verbatim" do
+      totals = described_class.new(
+        total_amount: 2380,
+        tax_rate: "19"
+      )
+
+      api_hash = totals.to_api_hash
+
+      expect(api_hash[:TasaIVA]).to eq("19")
+    end
+
+    # SII: MntNeto/IVA are code 0 (must not be sent) for exempt invoices (34)
+    # and export documents (110/111/112). Only MntTotal is required everywhere.
+    it "builds totals for an exempt document without net_amount or tax_amount" do
+      totals = described_class.new(
+        total_amount: 2000,
+        exempt_amount: 2000
+      )
+
+      api_hash = totals.to_api_hash
+
+      expect(api_hash).to eq({ MntTotal: 2000, MntExe: 2000 })
+    end
+
+    it "builds totals for an export document with only total_amount" do
+      totals = described_class.new(total_amount: 2000)
+
+      expect(totals.to_api_hash).to eq({ MntTotal: 2000 })
+    end
+
     it "raises ValidationError when required field total_amount is missing" do
       totals = described_class.new(
         net_amount: 2000,

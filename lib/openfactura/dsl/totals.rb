@@ -8,7 +8,7 @@ module Openfactura
     # Maps to API format when converted to hash
     class Totals
       # Required fields for Totals
-      REQUIRED_FIELDS = %i[total_amount net_amount tax_amount ].freeze
+      REQUIRED_FIELDS = %i[total_amount].freeze
 
       attr_accessor :total_amount, :net_amount, :tax_amount, :exempt_amount, :tax_rate, :period_amount, :amount_to_pay
 
@@ -36,7 +36,7 @@ module Openfactura
         totals[:MntNeto] = @net_amount.to_i if @net_amount
         totals[:IVA] = @tax_amount.to_i if @tax_amount
         totals[:MntExe] = @exempt_amount.to_i if @exempt_amount
-        totals[:TasaIVA] = @tax_rate.to_f.round(2) if @tax_rate
+        totals[:TasaIVA] = format_tax_rate(@tax_rate) if @tax_rate
         totals[:MontoPeriodo] = @period_amount.to_i if @period_amount
         totals[:VlrPagar] = @amount_to_pay.to_i if @amount_to_pay
         totals
@@ -50,6 +50,16 @@ module Openfactura
       end
 
       private
+
+      # The API expects TasaIVA as a string ("19"). The SII only admits decimals
+      # when significant, so 19.0 must serialize as "19" and not "19.0".
+      # @param value [String, Numeric] Tax rate
+      # @return [String] Tax rate in API format
+      def format_tax_rate(value)
+        return value.to_s unless value.is_a?(Numeric)
+
+        value == value.to_i ? value.to_i.to_s : value.to_s
+      end
 
       # Validate that all required fields are present and not empty
       # @raise [ValidationError] if any required field is missing or empty
