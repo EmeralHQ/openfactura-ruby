@@ -108,51 +108,31 @@ module Openfactura
       end
     end
 
-    # Extract error message from response body
-    # Handles Open Factura error format: { "error": { "message": "...", "code": "...", "details": [...] } }
     def extract_error_message(body)
-      return nil unless body
+      error_data = Openfactura.parse_error_body(body)
 
-      begin
-        error_data = if body.is_a?(Hash)
-                       body
-                     elsif body.is_a?(String) && !body.empty?
-                       JSON.parse(body)
-                     else
-                       nil
-                     end
-
-        return nil unless error_data
-
-        # Check for Open Factura error format: { "error": { "message": "...", "code": "...", "details": [...] } }
-        error_obj = error_data[:error] || error_data["error"]
-        if error_obj.is_a?(Hash)
-          # Extract message from error.message
-          error_message = error_obj[:message] || error_obj["message"]
-          error_code = error_obj[:code] || error_obj["code"]
-
-          # Build message with code if available
-          if error_message
-            return error_code ? "[#{error_code}] #{error_message}" : error_message
-          end
-        end
-
-        # Fallback: Try common error message fields
-        error_message = error_data[:message] || error_data["message"] ||
-                        error_data[:error] || error_data["error"] ||
-                        error_data[:detail] || error_data["detail"]
-
-        # If error is a hash, try to get a message from it
-        if error_message.is_a?(Hash)
-          error_message = error_message[:message] || error_message["message"] ||
-                          error_message[:error] || error_message["error"]
-        end
-
-        error_message.to_s if error_message
-      rescue JSON::ParserError
-        # If body is not JSON, return it as string (truncated if too long)
-        body.is_a?(String) && body.length > 200 ? "#{body[0..200]}..." : body.to_s
+      unless error_data
+        # Body was unparseable JSON — return raw string truncated
+        return body.is_a?(String) && !body.empty? ? body[0..200] : nil
       end
+
+      error_obj = error_data[:error] || error_data["error"]
+      if error_obj.is_a?(Hash)
+        error_message = error_obj[:message] || error_obj["message"]
+        error_code = error_obj[:code] || error_obj["code"]
+        return error_code ? "[#{error_code}] #{error_message}" : error_message if error_message
+      end
+
+      error_message = error_data[:message] || error_data["message"] ||
+                      error_data[:error] || error_data["error"] ||
+                      error_data[:detail] || error_data["detail"]
+
+      if error_message.is_a?(Hash)
+        error_message = error_message[:message] || error_message["message"] ||
+                        error_message[:error] || error_message["error"]
+      end
+
+      error_message.to_s if error_message
     end
 
     def parse_response(response)

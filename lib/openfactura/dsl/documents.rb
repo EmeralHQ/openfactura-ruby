@@ -1,10 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../resources/document"
-require_relative "../resources/document_response"
-require_relative "../resources/document_query_response"
-require_relative "../resources/document_error"
-require_relative "../resources/organization"
 require_relative "dte"
 require_relative "issuer"
 require "date"

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../resources/organization"
 require_relative "issuer"
 
 module Openfactura
