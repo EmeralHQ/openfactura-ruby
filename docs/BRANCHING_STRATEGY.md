@@ -54,11 +54,16 @@ de arriba pide, pero sin depender de que alguien se acuerde:
 | Regla | Por qué |
 |-------|---------|
 | No se puede pushear directo a `main` | Todo entra por PR |
-| PR con 1 aprobación y las conversaciones resueltas | Revisión real, no un sello |
 | Checks obligatorios: `Test (Ruby 3.1)`…`(3.4)`, `RuboCop`, `Build gem` | `main` siempre publicable |
 | Branch actualizada con `main` antes de mergear | Evita el merge semánticamente roto que ningún PR vio |
+| Conversaciones resueltas antes de mergear | Un comentario abierto no se pierde en el squash |
 | Solo squash merge | Un commit por PR (`allow_merge_commit` y `allow_rebase_merge` están apagados) |
 | Prohibido borrar `main` y forzar push | Un tag publicado tiene que seguir siendo alcanzable |
+
+**La aprobación no es obligatoria**: hoy el equipo es chico y exigirla dejaría a cada autor esperando
+—nadie puede aprobar su propio PR—. El listón automático es la CI, no un sello humano. Que no sea
+obligatoria no significa que sobre: si el PR toca la API pública o el formato del DTE, pide revisión.
+Cuando el equipo crezca, subir esto a 1 aprobación es cambiar un número en el ruleset.
 
 La CI vive en [.github/workflows/ci.yml](../.github/workflows/ci.yml) y corre en cada PR y push a
 `main`: `bundle exec rspec` sobre la matriz Ruby 3.1–3.4 (el rango que promete el gemspec),
