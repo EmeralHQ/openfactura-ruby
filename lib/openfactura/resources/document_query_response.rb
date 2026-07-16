@@ -80,12 +80,6 @@ module Openfactura
       !@document.nil?
     end
 
-    # Get document (for json and status queries)
-    # @return [Document, nil] Document object if available
-    def document
-      @document
-    end
-
     # Decode base64 PDF content
     # @return [String, nil] Decoded PDF binary data
     def decode_pdf

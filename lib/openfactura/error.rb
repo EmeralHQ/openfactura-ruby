@@ -6,18 +6,20 @@ module Openfactura
   # Base error class for all Open Factura API errors
   class Error < StandardError; end
 
-  # Parses an API response body into a hash, handling both Hash and JSON String inputs.
-  # Returns nil if the body cannot be parsed or is not a recognized type.
-  def self.parse_error_body(body)
-    return nil unless body
+  class << self
+    # Parses an API response body into a hash, handling both Hash and JSON String inputs.
+    # Returns nil if the body cannot be parsed or is not a recognized type.
+    def parse_error_body(body)
+      return nil unless body
 
-    if body.is_a?(Hash)
-      body
-    elsif body.is_a?(String) && !body.empty?
-      JSON.parse(body)
+      if body.is_a?(Hash)
+        body
+      elsif body.is_a?(String) && !body.empty?
+        JSON.parse(body)
+      end
+    rescue JSON::ParserError
+      nil
     end
-  rescue JSON::ParserError
-    nil
   end
 
   # Error raised when API request fails
@@ -87,7 +89,9 @@ module Openfactura
 
       details = error_data[:details] || error_data["details"]
       if details.is_a?(Array) && details.any?
-        details_str = details.map(&:to_s).join(", ")
+        # `map(&:to_s)` is not redundant here: details comes from the API, and a bare
+        # `join` would recursively flatten a nested array instead of inspecting it.
+        details_str = details.map(&:to_s).join(", ") # rubocop:disable Style/MapJoin
         return "Error: #{error_message}\nDetails: #{details_str}" if error_message
         return "Details: #{details_str}"
       end

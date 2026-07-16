@@ -104,7 +104,7 @@ RSpec.describe "Open Factura API Integration", :integration do
         response = Openfactura.documents.emit(
           dte: dte,
           issuer: issuer,
-          response: [ "PDF", "XML", "FOLIO", "TOKEN" ]
+          response: ["PDF", "XML", "FOLIO", "TOKEN"]
         )
       rescue => e
         # Log error to file for debugging
@@ -284,7 +284,7 @@ RSpec.describe "Open Factura API Integration", :integration do
       response1 = Openfactura.documents.emit(
         dte: dte,
         issuer: issuer,
-        response: [ "TOKEN" ],
+        response: ["TOKEN"],
         idempotency_key: custom_key
       )
 
@@ -299,12 +299,12 @@ RSpec.describe "Open Factura API Integration", :integration do
         Openfactura.documents.emit(
           dte: dte,
           issuer: issuer,
-          response: [ "TOKEN" ],
+          response: ["TOKEN"],
           idempotency_key: custom_key
         )
       end.to raise_error do |error|
         # Should be either DocumentError or ApiError (depending on parsing)
-        expect([ Openfactura::DocumentError, Openfactura::ApiError ]).to include(error.class)
+        expect([Openfactura::DocumentError, Openfactura::ApiError]).to include(error.class)
 
         # If it's a DocumentError, verify the code
         if error.is_a?(Openfactura::DocumentError)
@@ -359,11 +359,11 @@ RSpec.describe "Open Factura API Integration", :integration do
         Openfactura.documents.emit(
           dte: dte,
           issuer: issuer,
-          response: [ "TOKEN" ]
+          response: ["TOKEN"]
         )
       end.to raise_error do |error|
         # Should be either DocumentError or ApiError
-        expect([ Openfactura::DocumentError, Openfactura::ApiError ]).to include(error.class)
+        expect([Openfactura::DocumentError, Openfactura::ApiError]).to include(error.class)
         expect(error.message).to be_a(String)
         expect(error.message).not_to be_empty
 
@@ -424,7 +424,7 @@ RSpec.describe "Open Factura API Integration", :integration do
         first_doc = documentos.first
         # DTE type can be Integer or String
         dte_type = first_doc[:dte] || first_doc["dte"]
-        expect([ Integer, String ]).to include(dte_type.class)
+        expect([Integer, String]).to include(dte_type.class)
         # disponible may not be present in all responses
         disponible = first_doc[:disponible] || first_doc["disponible"]
         expect(disponible).to be_a(Integer) if disponible

@@ -85,10 +85,19 @@ El gem está en `0.x`: un breaking change es **minor**, no major. Desde `1.0.0`,
 ### RuboCop (style gate)
 
 - Corre `bundle exec rubocop <path>` una vez al final de la tarea. Arregla todas las ofensas antes de terminar.
-- `bundle exec rubocop -a <path>` para las autocorregibles de Layout/Style.
-- Config Omakase (`rubocop-rails-omakase`), cargada con `inherit_gem` — es un gem de solo-config, con
-  `require:` explota. `spec/` y `lib/generators/` están excluidos de `Metrics/BlockLength`.
-- Omakase pide espacio dentro de los brackets de array (`[ "TOKEN" ]`); no lo "arregles" al revés.
+- `bundle exec rubocop -a <path>` para las autocorregibles de Layout/Style. **No uses `-A`** sin mirar
+  qué toca: las unsafe cambian comportamiento (ver el `disable` de `Style/MapJoin` en `error.rb`).
+- Guía de estilos de Ruby de Shopify (`rubocop-shopify`), cargada con `inherit_gem`. Su `rubocop.yml`
+  ya declara el `plugins:`, así que acá no va ni `require:` ni `plugins:`.
+- Shopify pide **sin** espacio dentro de los brackets de array (`["TOKEN"]`) y `class << self` en vez de
+  `def self.x`. Desactiva todo `Metrics/*` y `Style/Documentation`: no los reconfigures acá.
+- `NewCops` queda en `disable` (lo hereda de Shopify, que triajea los cops nuevos). No lo actives.
+- Única desviación deliberada de la guía: `Style/StringLiterals` va reactivado en `double_quotes`,
+  porque las comillas dobles son convención del proyecto y Shopify deja el cop apagado.
+- El linter **no** sigue el piso de Ruby del gem: `rubocop-shopify` 3.0 exige >= 3.3 y el gem soporta
+  >= 3.1, así que el `Gemfile` solo lo instala si `RUBY_VERSION >= "3.3"`. En Ruby menores no hay
+  `rubocop` y el gate no corre — es esperado, no lo "arregles" bajando el rango del gemspec.
+- Las dev dependencies viven en el `Gemfile`, no en el gemspec (`Gemspec/DevelopmentDependencies`).
 
 ### Compatibilidad (lo crítico acá)
 

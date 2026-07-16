@@ -4,8 +4,8 @@ module Openfactura
   # Organization resource model
   class Organization
     attr_accessor :rut, :razon_social, :email, :telefono, :direccion, :cdg_sii_sucur, :glosa_descriptiva,
-                  :direccion_regional, :resolucion, :nombre_fantasia, :web, :sucursales, :actividades,
-                  :comuna, :ciudad
+      :direccion_regional, :resolucion, :nombre_fantasia, :web, :sucursales, :actividades,
+      :comuna, :ciudad
 
     def initialize(attributes = {})
       # Map API response fields (camelCase) to Ruby attributes (snake_case)

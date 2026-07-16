@@ -131,7 +131,7 @@ RSpec.describe Openfactura::DocumentError do
       error = described_class.new(
         code: "OF-01",
         message: "Test",
-        details: [ { field: "test", issue: "error" } ]
+        details: [{ field: "test", issue: "error" }]
       )
 
       expect(error.has_details?).to be true
@@ -176,7 +176,7 @@ RSpec.describe Openfactura::DocumentError do
       error = described_class.new(
         code: "OF-01",
         message: "Faltan datos obligatorios",
-        details: [ { field: "test", issue: "error" } ]
+        details: [{ field: "test", issue: "error" }]
       )
 
       hash = error.to_h

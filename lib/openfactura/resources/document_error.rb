@@ -44,11 +44,13 @@ module Openfactura
       @error_message || super
     end
 
-    # Get error description for a code
-    # @param code [String] Error code (e.g., "OF-01")
-    # @return [String] Error description
-    def self.error_description(code)
-      ERROR_CODES[code] || "Unknown error code: #{code}"
+    class << self
+      # Get error description for a code
+      # @param code [String] Error code (e.g., "OF-01")
+      # @return [String] Error description
+      def error_description(code)
+        ERROR_CODES[code] || "Unknown error code: #{code}"
+      end
     end
 
     # Get error description for current code
