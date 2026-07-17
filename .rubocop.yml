@@ -1,11 +1,13 @@
-# RuboCop configuration following Omakase Rails style.
-# rubocop-rails-omakase ships only a config file, no loadable Ruby: `require` raises LoadError.
+# RuboCop configuration following the Shopify Ruby style guide.
+# https://shopify.github.io/ruby-style-guide/
+#
+# rubocop-shopify's own rubocop.yml declares `plugins: - rubocop-shopify`, so
+# inheriting it is enough — no `require`/`plugins` entry needed here.
 inherit_gem:
-  rubocop-rails-omakase: rubocop.yml
+  rubocop-shopify: rubocop.yml
 
 AllCops:
   TargetRubyVersion: 3.1
-  NewCops: enable
   Exclude:
     - 'bin/**/*'
     - 'pkg/**/*'
@@ -14,13 +16,8 @@ AllCops:
     - 'lib/generators/**/*'
     - 'sig/**/*'
 
+# Deliberate deviation: the guide leaves quoting to the author, but CLAUDE.md makes
+# double quotes a project convention, so we keep enforcing it.
 Style/StringLiterals:
+  Enabled: true
   EnforcedStyle: double_quotes
-
-Style/Documentation:
-  Enabled: false
-
-Metrics/BlockLength:
-  Exclude:
-    - 'spec/**/*'
-    - 'lib/generators/**/*'

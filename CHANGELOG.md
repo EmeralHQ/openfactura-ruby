@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expanded `CLAUDE.md` with testing, RuboCop, backward-compatibility and secret-handling rules
 - Integration specs no longer run in the default `bundle exec rspec` suite. They hit the real
   sandbox and need credentials; opt in with `RUN_INTEGRATION=1` or `--tag integration`
+- RuboCop now follows the Shopify Ruby style guide (`rubocop-shopify`) instead of Omakase Rails
+  (`rubocop-rails-omakase`). Development-only change: no runtime behaviour or public API is affected
+- Development dependencies moved from the gemspec to the `Gemfile`, as the Shopify guide's
+  `Gemspec/DevelopmentDependencies` requires. The gem's runtime dependencies are unchanged
+- `rubocop` and `rubocop-shopify` install only on Ruby >= 3.3, which the linter requires. The gem
+  itself still supports Ruby >= 3.1 and is still tested on 3.1–3.4
+
+### Removed
+- `rubocop-rails` and `rubocop-rails-omakase` development dependencies, unused after the style change
 
 ### Fixed
 - RuboCop never loaded its configuration: `rubocop-rails-omakase` ships a config file with no
@@ -26,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Gemfile.lock` is no longer versioned. It pinned `zeitwerk`, `activesupport`, `multi_xml` and
   `erb` to versions requiring Ruby >= 3.2, which made `bundle install` fail on Ruby 3.1 even
   though the gemspec promises `>= 3.1.0`. Each Ruby version now resolves its own set
+- Dead code surfaced by the stricter style guide, with no behaviour change: a redundant
+  `DocumentQueryResponse#document` that re-defined the reader already provided by `attr_accessor`,
+  and a no-op constant reference in `Config.validate!`
 
 ## [0.1.0] - 2025-11-10
 

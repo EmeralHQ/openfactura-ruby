@@ -45,34 +45,36 @@ module Openfactura
       }
     }.freeze
 
-    # Helper method to get company by name
-    def self.[](name)
-      case name.to_s.downcase
-      when "haulmer"
-        HAULMER
-      when "hosty"
-        HOSTY
-      else
-        raise ArgumentError, "Unknown company: #{name}. Available: haulmer, hosty"
+    class << self
+      # Helper method to get company by name
+      def [](name)
+        case name.to_s.downcase
+        when "haulmer"
+          HAULMER
+        when "hosty"
+          HOSTY
+        else
+          raise ArgumentError, "Unknown company: #{name}. Available: haulmer, hosty"
+        end
       end
-    end
 
-    # Helper method to configure Openfactura with a company's API key
-    def self.configure_with(company_name, environment: :sandbox)
-      company = self[company_name]
-      Openfactura.configure do |config|
-        config.api_key = company[:apikey]
-        config.environment = environment
+      # Helper method to configure Openfactura with a company's API key
+      def configure_with(company_name, environment: :sandbox)
+        company = self[company_name]
+        Openfactura.configure do |config|
+          config.api_key = company[:apikey]
+          config.environment = environment
+        end
+        company
       end
-      company
-    end
 
-    # Get all available companies
-    def self.all
-      {
-        haulmer: HAULMER,
-        hosty: HOSTY
-      }
+      # Get all available companies
+      def all
+        {
+          haulmer: HAULMER,
+          hosty: HOSTY
+        }
+      end
     end
   end
 end

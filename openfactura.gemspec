@@ -5,8 +5,8 @@ require_relative "lib/openfactura/version"
 Gem::Specification.new do |spec|
   spec.name = "openfactura"
   spec.version = Openfactura::VERSION
-  spec.authors = [ "Carlos Torrealba" ]
-  spec.email = [ "carlos@emeral.cl" ]
+  spec.authors = ["Carlos Torrealba"]
+  spec.email = ["carlos@emeral.cl"]
 
   spec.summary = "Ruby SDK with DSL for Open Factura API"
   spec.description = "A Ruby gem providing a DSL interface for interacting with the Open Factura API, supporting electronic document (DTE) emission and organization management."
@@ -30,20 +30,12 @@ Gem::Specification.new do |spec|
   end
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
-  spec.require_paths = [ "lib" ]
+  spec.require_paths = ["lib"]
 
   # Runtime dependencies
   spec.add_dependency "httparty", "~> 0.21"
   spec.add_dependency "dry-configurable", "~> 1.0"
   spec.add_dependency "zeitwerk", "~> 2.6"
 
-  # Development dependencies
-  spec.add_development_dependency "rspec", "~> 3.12"
-  spec.add_development_dependency "webmock", "~> 3.18"
-  spec.add_development_dependency "factory_bot", "~> 6.2"
-  spec.add_development_dependency "rubocop", "~> 1.57"
-  spec.add_development_dependency "rubocop-rails", "~> 2.33"
-  spec.add_development_dependency "rubocop-rails-omakase", "~> 1.1"
-  spec.add_development_dependency "ruby-lsp", "~> 0.15"
-  spec.add_development_dependency "debug", "~> 1.8"
+  # Development dependencies live in the Gemfile, not here.
 end

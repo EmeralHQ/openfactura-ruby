@@ -59,24 +59,21 @@ module Openfactura
       def api_base_url=(value)
         config.api_base_url = value
       end
-    end
 
-    # Get the base URL based on environment
-    def self.base_url
-      return api_base_url if api_base_url
+      # Get the base URL based on environment
+      def base_url
+        return api_base_url if api_base_url
 
-      environment == :production ? PRODUCTION_URL : SANDBOX_URL
-    end
+        environment == :production ? PRODUCTION_URL : SANDBOX_URL
+      end
 
-    # Validate configuration
-    # This is called lazily when the Client is initialized, not during configuration
-    # This allows Rails to load the initializer even if API key is not yet set
-    def self.validate!
-      # Ensure ValidationError is loaded
-      ValidationError
-
-      raise ValidationError, "API key is required" if api_key.nil? || api_key.to_s.strip.empty?
-      raise ValidationError, "Environment must be :sandbox or :production" unless %i[sandbox production].include?(environment)
+      # Validate configuration
+      # This is called lazily when the Client is initialized, not during configuration
+      # This allows Rails to load the initializer even if API key is not yet set
+      def validate!
+        raise ValidationError, "API key is required" if api_key.nil? || api_key.to_s.strip.empty?
+        raise ValidationError, "Environment must be :sandbox or :production" unless %i[sandbox production].include?(environment)
+      end
     end
   end
 end
