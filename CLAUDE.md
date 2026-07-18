@@ -5,7 +5,7 @@ Guía para Claude Code trabajando en este repositorio.
 ## Project Overview
 
 SDK Ruby con DSL en inglés para la API OpenFactura (Haulmer) de facturación electrónica chilena. Foco
-principal: emisión de DTEs, consulta de documentos y datos de organización. Ruby >= 3.1.
+principal: emisión de DTEs, consulta de documentos y datos de organización. Ruby >= 3.3.
 
 Consumidor típico: una app Rails que emite facturas (tipo 33) y consulta su estado/PDF/XML —
 `EmeralHQ/Emeral-next` lo usa en `Billings::`. **Es un gem público en RubyGems**: la API pública tiene
@@ -70,7 +70,7 @@ El gem está en `0.x`: un breaking change es **minor**, no major. Desde `1.0.0`,
 - Los `:integration` pegan al sandbox real y necesitan credenciales: `spec_helper` los excluye de la
   suite por defecto (opt-in con `RUN_INTEGRATION=1` o `--tag integration`). No los uses para verificar
   un cambio a menos que el usuario lo pida.
-- La suite corre en Ruby 3.1–3.4 en CI: el gemspec promete `>= 3.1.0`. Por eso `Gemfile.lock` **no** se
+- La suite corre en Ruby 3.3–3.5 en CI: el gemspec promete `>= 3.3.0`. Por eso `Gemfile.lock` **no** se
   versiona — fijarlo arrastra a todos los Ruby a una resolución que solo sirve en el más nuevo.
 
 ## AI Behavior Rules
@@ -94,9 +94,8 @@ El gem está en `0.x`: un breaking change es **minor**, no major. Desde `1.0.0`,
 - `NewCops` queda en `disable` (lo hereda de Shopify, que triajea los cops nuevos). No lo actives.
 - Única desviación deliberada de la guía: `Style/StringLiterals` va reactivado en `double_quotes`,
   porque las comillas dobles son convención del proyecto y Shopify deja el cop apagado.
-- El linter **no** sigue el piso de Ruby del gem: `rubocop-shopify` 3.0 exige >= 3.3 y el gem soporta
-  >= 3.1, así que el `Gemfile` solo lo instala si `RUBY_VERSION >= "3.3"`. En Ruby menores no hay
-  `rubocop` y el gate no corre — es esperado, no lo "arregles" bajando el rango del gemspec.
+- El piso del gem (`>= 3.3`) coincide con el que exige `rubocop-shopify` 3.0, así que el `Gemfile`
+  instala el linter sin guardas de versión. Si algún día se sube el piso, el linter lo acompaña solo.
 - Las dev dependencies viven en el `Gemfile`, no en el gemspec (`Gemspec/DevelopmentDependencies`).
 
 ### Compatibilidad (lo crítico acá)

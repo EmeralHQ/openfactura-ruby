@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Shared Emeral workflow skills for Claude Code: `branch-strategy`, `release` and `commit`
 - Branching strategy doc (`docs/BRANCHING_STRATEGY.md`) and pull request template
-- GitHub Actions CI (`.github/workflows/ci.yml`): RSpec on Ruby 3.1–3.4, RuboCop, and a gem
+- GitHub Actions CI (`.github/workflows/ci.yml`): RSpec on Ruby 3.3–3.5, RuboCop, and a gem
   build that installs and loads the packaged `.gem` with runtime dependencies only
 - Dependabot for `github-actions` and `bundler`
 
@@ -22,8 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`rubocop-rails-omakase`). Development-only change: no runtime behaviour or public API is affected
 - Development dependencies moved from the gemspec to the `Gemfile`, as the Shopify guide's
   `Gemspec/DevelopmentDependencies` requires. The gem's runtime dependencies are unchanged
-- `rubocop` and `rubocop-shopify` install only on Ruby >= 3.3, which the linter requires. The gem
-  itself still supports Ruby >= 3.1 and is still tested on 3.1–3.4
+- **Minimum Ruby raised to 3.3** (`required_ruby_version >= 3.3.0`, was `>= 3.1.0`). Ruby 3.1 and
+  3.2 are both end-of-life. **Breaking for consumers still on 3.1/3.2**; with the gem in `0.x` this
+  ships as a minor bump (next release: `0.2.0`)
 
 ### Removed
 - `rubocop-rails` and `rubocop-rails-omakase` development dependencies, unused after the style change
