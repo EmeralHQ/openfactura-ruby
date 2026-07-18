@@ -153,10 +153,26 @@ RSpec.describe Openfactura::Client do
       expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /418/)
     end
 
+    it "preserves status_code and response_body on an unmapped 4xx error" do
+      stub_request(:get, "#{config.base_url}/v1/test")
+        .to_return(status: 418, body: '{"error":"teapot"}', headers: { "Content-Type" => "application/json" })
+
+      expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError) do |error|
+        expect(error.status_code).to eq(418)
+        expect(error.response_body).to include("teapot")
+      end
+    end
+
     it "wraps a network timeout in an ApiError" do
       stub_request(:get, "#{config.base_url}/v1/test").to_timeout
 
       expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /Request timeout/)
+    end
+
+    it "wraps an unexpected error in an ApiError" do
+      stub_request(:get, "#{config.base_url}/v1/test").to_raise(RuntimeError.new("boom"))
+
+      expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /Request failed: boom/)
     end
 
     it "extracts a flat top-level message from an error body without an error object" do

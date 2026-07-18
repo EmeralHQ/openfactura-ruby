@@ -66,8 +66,10 @@ module Openfactura
         # We need to check the response code manually
         response = self.class.public_send(method, path, options)
         handle_response(response)
-      rescue Openfactura::AuthenticationError, Openfactura::NotFoundError, Openfactura::RateLimitError, Openfactura::ServerError => e
-        # Re-raise our custom errors
+      rescue Openfactura::ApiError
+        # Re-raise our typed errors untouched. This must catch the base ApiError (raised for 400
+        # and other unmapped statuses), not only its subclasses, or the generic StandardError
+        # rescue below would re-wrap it and drop its status_code and response_body.
         raise
       rescue Timeout::Error, Net::ReadTimeout => e
         raise Openfactura::ApiError.new("Request timeout: #{e.message}")
