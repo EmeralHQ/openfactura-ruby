@@ -318,14 +318,7 @@ RSpec.describe Openfactura::DSL::Dte do
 
   describe "#to_h" do
     it "is an alias for #to_api_hash" do
-      receiver = Openfactura::DSL::Receiver.new(
-        rut: "76430498-5", business_name: "HOSTY SPA", business_activity: "CONSULTORIA",
-        contact: "Juan", address: "ARTURO PRAT 527", commune: "Curicó"
-      )
-      item = Openfactura::DSL::DteItem.new(line_number: 1, name: "Producto", quantity: 1, price: 2000, amount: 2000)
-      totals = Openfactura::DSL::Totals.new(total_amount: 2380, net_amount: 2000, tax_amount: 380)
-      dte = described_class.new(type: 33, receiver: receiver, items: [item], totals: totals)
-
+      dte = build(:dte)
       expect(dte.to_h).to eq(dte.to_api_hash)
     end
   end

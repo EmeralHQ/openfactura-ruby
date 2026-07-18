@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   coverage raised from ~89% to ~98.5%, mainly across the HTTP client's error paths (429/500/timeout,
   PUT/DELETE, logging), the `ApiError`/`parse_error_body` message formatting, DSL validation-error
   messages, and the Rails install generator. Development-only change: no runtime or public API impact
+- FactoryBot factories for the DSL classes (`receiver`, `issuer`, `dte_item`, `totals`, `dte`) under
+  `spec/factories/`, so specs build test data with `build(:dte)` instead of repeating literals
 
 ### Changed
 - Expanded `CLAUDE.md` with testing, RuboCop, backward-compatibility and secret-handling rules
