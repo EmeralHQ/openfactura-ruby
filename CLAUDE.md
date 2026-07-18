@@ -65,6 +65,11 @@ El gem está en `0.x`: un breaking change es **minor**, no major. Desde `1.0.0`,
 - FactoryBot para datos de prueba; factories en `spec/factories/`.
 - Todo campo o endpoint nuevo llega con specs: el happy path del `to_api_hash` **y** el
   `ValidationError` cuando falta un `REQUIRED_FIELDS`.
+- **Cobertura (SimpleCov):** `bundle exec rspec` genera el reporte en `coverage/` (ignorado por git).
+  El piso es **97% de líneas** y la CI lo hace fallar si baja (gate solo en CI: una corrida de un
+  archivo suelto no bloquea localmente). Código nuevo llega con los tests que mantengan el piso; se
+  sube cuando la cobertura mejora, no se baja. El único código sin cubrir es glue de Rails (Railtie) y
+  ramas defensivas inalcanzables.
 - Los specs son el único lugar (junto a `to_api_hash`) donde aparecen claves en español SII —
   ahí es correcto y esperado: verifican el contrato real con la API.
 - Los `:integration` pegan al sandbox real y necesitan credenciales: `spec_helper` los excluye de la

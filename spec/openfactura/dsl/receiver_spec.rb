@@ -143,5 +143,23 @@ RSpec.describe Openfactura::DSL::Receiver do
       # Original value should remain unchanged
       expect(receiver.business_activity).to eq(long_activity)
     end
+
+    it "names every missing field with its English and SII labels" do
+      expect { described_class.new.to_api_hash }.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("rut (RUTRecep)")
+        expect(error.message).to include("business_name (RznSocRecep)")
+      end
+    end
+  end
+
+  describe "#to_h" do
+    it "is an alias for #to_api_hash" do
+      attrs = {
+        rut: "76430498-5", business_name: "HOSTY SPA", business_activity: "CONSULTORIA",
+        contact: "Juan", address: "ARTURO PRAT 527", commune: "Curicó"
+      }
+      receiver = described_class.new(attrs)
+      expect(receiver.to_h).to eq(receiver.to_api_hash)
+    end
   end
 end

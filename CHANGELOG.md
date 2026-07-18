@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI (`.github/workflows/ci.yml`): RSpec on Ruby 3.3–3.5, RuboCop, and a gem
   build that installs and loads the packaged `.gem` with runtime dependencies only
 - Dependabot for `github-actions` and `bundler`
+- Test coverage measurement with SimpleCov and a 97% line-coverage gate enforced on CI. Line
+  coverage raised from ~89% to ~98.5%, mainly across the HTTP client's error paths (429/500/timeout,
+  PUT/DELETE, logging), the `ApiError`/`parse_error_body` message formatting, DSL validation-error
+  messages, and the Rails install generator. Development-only change: no runtime or public API impact
 
 ### Changed
 - Expanded `CLAUDE.md` with testing, RuboCop, backward-compatibility and secret-handling rules

@@ -42,4 +42,22 @@ RSpec.describe Openfactura::Config do
       expect { Openfactura::Config.validate! }.not_to raise_error
     end
   end
+
+  describe "accessors" do
+    after do
+      Openfactura::Config.timeout = 30
+      Openfactura::Config.logger = nil
+    end
+
+    it "reads and writes the timeout" do
+      Openfactura::Config.timeout = 45
+      expect(Openfactura::Config.timeout).to eq(45)
+    end
+
+    it "reads and writes the logger" do
+      logger = Object.new
+      Openfactura::Config.logger = logger
+      expect(Openfactura::Config.logger).to be(logger)
+    end
+  end
 end

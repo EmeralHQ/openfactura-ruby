@@ -1,5 +1,23 @@
 # frozen_string_literal: true
 
+require "simplecov"
+SimpleCov.start do
+  add_filter "/spec/"
+  # version.rb is loaded by the gemspec during bundler/setup, before SimpleCov starts,
+  # so its coverage can never be measured here — filter it out to keep the report honest.
+  add_filter "lib/openfactura/version.rb"
+
+  add_group "DSL", "lib/openfactura/dsl"
+  add_group "Resources", "lib/openfactura/resources"
+  add_group "Rails", %w[lib/openfactura/railtie.rb lib/generators]
+
+  # Coverage gate: on CI the suite fails if line coverage drops below this floor, so new code
+  # must ship with the tests that keep it here. It is CI-only so a local single-file run
+  # (which naturally reports low coverage) is not blocked. Raise the floor as coverage
+  # improves; do not lower it.
+  minimum_coverage line: 97 if ENV["CI"]
+end
+
 require "bundler/setup"
 require "openfactura"
 require "webmock/rspec"

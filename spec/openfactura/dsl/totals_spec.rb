@@ -204,4 +204,11 @@ RSpec.describe Openfactura::DSL::Totals do
       end.not_to raise_error
     end
   end
+
+  describe "#to_h" do
+    it "is an alias for #to_api_hash" do
+      totals = described_class.new(total_amount: 2380, net_amount: 2000, tax_amount: 380)
+      expect(totals.to_h).to eq(totals.to_api_hash)
+    end
+  end
 end

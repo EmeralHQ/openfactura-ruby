@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "logger"
+
 RSpec.describe Openfactura::Client do
   let(:config) { Openfactura::Config }
   let(:client) { described_class.new(config) }
@@ -98,6 +100,102 @@ RSpec.describe Openfactura::Client do
         expect(error.message).to include("RUTRecep: El campo es requerido")
         expect(error.message).to include("FchEmis: Formato de fecha inválido")
       end
+    end
+
+    it "merges custom headers with the default headers" do
+      stub_request(:post, "#{config.base_url}/v1/test")
+        .with(headers: { "apikey" => "test-api-key", "X-Custom" => "yes" })
+        .to_return(status: 200, body: "{}", headers: { "Content-Type" => "application/json" })
+
+      expect { client.post("/v1/test", headers: { "X-Custom" => "yes" }, body: {}) }.not_to raise_error
+    end
+  end
+
+  describe "#put" do
+    it "makes a PUT request" do
+      stub_request(:put, "#{config.base_url}/v1/test")
+        .to_return(status: 200, body: '{"ok": true}', headers: { "Content-Type" => "application/json" })
+
+      response = client.put("/v1/test")
+      expect(response["ok"] || response[:ok]).to be true
+    end
+  end
+
+  describe "#delete" do
+    it "makes a DELETE request" do
+      stub_request(:delete, "#{config.base_url}/v1/test")
+        .to_return(status: 200, body: '{"ok": true}', headers: { "Content-Type" => "application/json" })
+
+      response = client.delete("/v1/test")
+      expect(response["ok"] || response[:ok]).to be true
+    end
+  end
+
+  describe "HTTP error handling" do
+    it "raises RateLimitError on 429" do
+      stub_request(:get, "#{config.base_url}/v1/test")
+        .to_return(status: 429, body: "", headers: { "Content-Type" => "application/json" })
+
+      expect { client.get("/v1/test") }.to raise_error(Openfactura::RateLimitError, /Rate limit exceeded/)
+    end
+
+    it "raises ServerError on 500" do
+      stub_request(:get, "#{config.base_url}/v1/test")
+        .to_return(status: 500, body: "boom", headers: { "Content-Type" => "text/plain" })
+
+      expect { client.get("/v1/test") }.to raise_error(Openfactura::ServerError)
+    end
+
+    it "raises ApiError on an unmapped 4xx without an error body" do
+      stub_request(:get, "#{config.base_url}/v1/test")
+        .to_return(status: 418, body: "", headers: { "Content-Type" => "application/json" })
+
+      expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /418/)
+    end
+
+    it "wraps a network timeout in an ApiError" do
+      stub_request(:get, "#{config.base_url}/v1/test").to_timeout
+
+      expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /Request timeout/)
+    end
+
+    it "extracts a flat top-level message from an error body without an error object" do
+      stub_request(:post, "#{config.base_url}/v1/test")
+        .to_return(status: 400, body: '{"detail":"algo salió mal"}', headers: { "Content-Type" => "application/json" })
+
+      expect { client.post("/v1/test", body: {}) }.to raise_error(Openfactura::ApiError, /algo salió mal/)
+    end
+
+    it "unwraps a nested message object from an error body" do
+      stub_request(:post, "#{config.base_url}/v1/test")
+        .to_return(status: 400, body: '{"message":{"message":"nested detail"}}', headers: { "Content-Type" => "application/json" })
+
+      expect { client.post("/v1/test", body: {}) }.to raise_error(Openfactura::ApiError, /nested detail/)
+    end
+
+    it "returns the raw body when the error body is not valid JSON" do
+      stub_request(:post, "#{config.base_url}/v1/test")
+        .to_return(status: 400, body: "plain text failure", headers: { "Content-Type" => "text/plain" })
+
+      expect { client.post("/v1/test", body: {}) }.to raise_error(Openfactura::ApiError, /plain text failure/)
+    end
+  end
+
+  describe "request logging" do
+    let(:logger) { instance_double(Logger, info: nil, debug: nil) }
+
+    before { config.logger = logger }
+
+    after { config.logger = nil }
+
+    it "logs the request method, path and options when a logger is configured" do
+      stub_request(:post, "#{config.base_url}/v1/test")
+        .to_return(status: 200, body: "{}", headers: { "Content-Type" => "application/json" })
+
+      client.post("/v1/test", body: { name: "test" })
+
+      expect(logger).to have_received(:info).with("[OpenFactura] POST /v1/test")
+      expect(logger).to have_received(:debug).with(/Options:/)
     end
   end
 end

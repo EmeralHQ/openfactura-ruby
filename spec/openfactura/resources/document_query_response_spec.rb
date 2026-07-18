@@ -135,6 +135,33 @@ RSpec.describe Openfactura::DocumentQueryResponse do
       response = described_class.new(token: token, query_type: "pdf", response_data: response_data)
       expect(response.content).to eq("base64content")
     end
+
+    it "returns xml for xml query" do
+      response = described_class.new(token: token, query_type: "xml", response_data: { xml: "xmlbase64" })
+      expect(response.content).to eq("xmlbase64")
+    end
+
+    it "returns cedible for cedible query" do
+      response = described_class.new(token: token, query_type: "cedible", response_data: { cedible: "cedbase64" })
+      expect(response.content).to eq("cedbase64")
+    end
+  end
+
+  describe "direct (non-hash) content responses" do
+    it "stores pdf content when the response is a raw string" do
+      response = described_class.new(token: token, query_type: "pdf", response_data: "rawpdf")
+      expect(response.pdf).to eq("rawpdf")
+    end
+
+    it "stores xml content when the response is a raw string" do
+      response = described_class.new(token: token, query_type: "xml", response_data: "rawxml")
+      expect(response.xml).to eq("rawxml")
+    end
+
+    it "stores cedible content when the response is a raw string" do
+      response = described_class.new(token: token, query_type: "cedible", response_data: "rawcedible")
+      expect(response.cedible).to eq("rawcedible")
+    end
   end
 
   describe "#decode_pdf" do
