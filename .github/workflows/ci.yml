@@ -26,7 +26,7 @@ jobs:
         # 3.1 y 3.2 salen porque están EOL; 3.5 es la última estable.
         ruby: [ "3.3", "3.4", "3.5" ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
@@ -39,7 +39,7 @@ jobs:
     name: RuboCop
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           # 3.3 es el piso del gem y el que exige rubocop-shopify: no lo bajes.
@@ -51,7 +51,7 @@ jobs:
     name: Build gem
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.3"
