@@ -159,7 +159,7 @@ El código, nombres de métodos y docs del gem van en **inglés**; las claves de
 - Integración real contra sandbox: specs tagged `:integration` (`spec/integration/`), usan `Openfactura::SandboxCompanies.configure_with(:haulmer, environment: :sandbox)` y hacen skip si la API no responde. Las API keys sandbox son públicas (están en el README y en `sandbox_companies.rb`).
 - Cada clase nueva lleva spec unitario espejo en `spec/openfactura/...` (mismo path). FactoryBot está configurado; fixtures en `spec/fixtures/`.
 - Para stubs HTTP usar WebMock contra `https://dev-api.haulmer.com`.
-- Lint: RuboCop (omakase). Ruby >= 3.1. Dependencias runtime: httparty, dry-configurable, zeitwerk.
+- Lint: RuboCop (rubocop-shopify). Ruby >= 3.3. Dependencias runtime: httparty, dry-configurable, zeitwerk.
 
 ## Checklist: agregar un endpoint nuevo
 

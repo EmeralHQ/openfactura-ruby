@@ -17,11 +17,7 @@ gem "rspec", "~> 3.12"
 gem "ruby-lsp", "~> 0.15"
 gem "webmock", "~> 3.18"
 
-# The linter is the one tool that does not follow the gem's Ruby floor: rubocop-shopify
-# 3.0 requires Ruby >= 3.3, while this gem supports >= 3.1. Guarding it here keeps
-# `bundle install` working on the 3.1 and 3.2 CI jobs — the style gate runs on 3.3 only.
-# This works because Gemfile.lock is not versioned: each Ruby resolves its own set.
-if RUBY_VERSION >= "3.3"
-  gem "rubocop", "~> 1.72", require: false
-  gem "rubocop-shopify", "~> 3.0", require: false
-end
+# rubocop-shopify 3.0 requires Ruby >= 3.3, which the gem's own floor now also is
+# (see required_ruby_version), so no version guard is needed.
+gem "rubocop", "~> 1.72", require: false
+gem "rubocop-shopify", "~> 3.0", require: false
