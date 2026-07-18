@@ -48,4 +48,10 @@ RSpec.describe Openfactura do
       expect(described_class.documents).not_to be(documents)
     end
   end
+
+  describe ".config" do
+    it "returns the Config class" do
+      expect(described_class.config).to be(Openfactura::Config)
+    end
+  end
 end

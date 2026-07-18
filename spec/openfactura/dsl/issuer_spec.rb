@@ -181,5 +181,22 @@ RSpec.describe Openfactura::DSL::Issuer do
       # Original value should remain unchanged
       expect(issuer.business_activity).to eq(long_activity)
     end
+
+    it "names every missing field with its English and SII labels" do
+      expect { described_class.new.to_api_hash }.to raise_error(Openfactura::ValidationError) do |error|
+        expect(error.message).to include("rut (RUTEmisor)")
+        expect(error.message).to include("business_name (RznSoc)")
+      end
+    end
+  end
+
+  describe "#to_h" do
+    it "is an alias for #to_api_hash" do
+      issuer = described_class.new(
+        rut: "76795561-8", business_name: "HAULMER SPA", business_activity: "SERVICIOS",
+        economic_activity_code: "726000", address: "ARTURO PRAT 527", commune: "Curicó"
+      )
+      expect(issuer.to_h).to eq(issuer.to_api_hash)
+    end
   end
 end

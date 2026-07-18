@@ -185,4 +185,11 @@ RSpec.describe Openfactura::DSL::DteItem do
       end.not_to raise_error
     end
   end
+
+  describe "#to_h" do
+    it "is an alias for #to_api_hash" do
+      item = described_class.new(line_number: 1, name: "Producto", quantity: 1, price: 2000, amount: 2000)
+      expect(item.to_h).to eq(item.to_api_hash)
+    end
+  end
 end
