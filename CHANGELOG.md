@@ -43,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dead code surfaced by the stricter style guide, with no behaviour change: a redundant
   `DocumentQueryResponse#document` that re-defined the reader already provided by `attr_accessor`,
   and a no-op constant reference in `Config.validate!`
+- `Client#request` no longer swallows typed API errors: the generic `rescue StandardError` was
+  catching the base `ApiError` raised for 400 and other unmapped statuses and re-wrapping it as
+  `"Request failed: …"`, discarding `status_code` and `response_body`. It now re-raises any
+  `Openfactura::ApiError` untouched, so those two accessors are populated on every API error (the
+  error message for those statuses no longer carries the `"Request failed: "` prefix)
 
 ## [0.1.0] - 2025-11-10
 
