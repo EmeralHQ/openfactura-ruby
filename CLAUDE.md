@@ -62,7 +62,8 @@ El gem está en `0.x`: un breaking change es **minor**, no major. Desde `1.0.0`,
 ## Testing
 
 - RSpec + WebMock (la red está bloqueada en los unitarios: toda llamada HTTP va mockeada).
-- FactoryBot para datos de prueba; factories en `spec/factories/`.
+- FactoryBot para datos de prueba; factories en `spec/factories/` (`receiver`, `issuer`, `dte_item`,
+  `totals`, `dte`). Construyen con `build(:x)` (son POROs, no AR) y aceptan overrides: `build(:dte, type: 61)`.
 - Todo campo o endpoint nuevo llega con specs: el happy path del `to_api_hash` **y** el
   `ValidationError` cuando falta un `REQUIRED_FIELDS`.
 - **Cobertura (SimpleCov):** `bundle exec rspec` genera el reporte en `coverage/` (ignorado por git).
