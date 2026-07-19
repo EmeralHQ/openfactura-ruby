@@ -51,6 +51,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Openfactura::ApiError` untouched, so those two accessors are populated on every API error (the
   error message for those statuses no longer carries the `"Request failed: "` prefix)
 
+### Security
+- Multi-tenant API key isolation: `Client` no longer configures the connection through shared
+  class-level HTTParty state (`self.class.base_uri`/`headers`). Each client now holds its own
+  immutable per-instance options and dispatches through HTTParty's module functions, so two clients
+  built with different API keys can no longer clobber each other — a client can no longer emit DTEs
+  under another tenant's credentials. Public methods (`get`/`post`/`put`/`delete`) are unchanged (#6)
+- The API key and DTE body are no longer written to logs. `log_request` used to dump the full
+  request options — including the `apikey` header and the DTE payload with real RUTs and amounts —
+  at debug level; it now logs only method, path and non-sensitive headers, with the apikey redacted
+  to `[FILTERED]` and the request body never logged (#7)
+
 ## [0.1.0] - 2025-11-10
 
 ### Added

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "logger"
+require "stringio"
 
 RSpec.describe Openfactura::Client do
   let(:config) { Openfactura::Config }
@@ -197,21 +198,45 @@ RSpec.describe Openfactura::Client do
     end
   end
 
-  describe "request logging" do
-    let(:logger) { instance_double(Logger, info: nil, debug: nil) }
+  describe "request logging (secret redaction)" do
+    let(:output) { StringIO.new }
+    let(:logger) { Logger.new(output, level: Logger::DEBUG) }
 
     before { config.logger = logger }
 
     after { config.logger = nil }
 
-    it "logs the request method, path and options when a logger is configured" do
+    it "logs method and path, redacts the apikey, and never logs the request body" do
       stub_request(:post, "#{config.base_url}/v1/test")
         .to_return(status: 200, body: "{}", headers: { "Content-Type" => "application/json" })
 
-      client.post("/v1/test", body: { name: "test" })
+      client.post("/v1/test", body: { rut: "11111111-1", amount: 5000 }, headers: { "Idempotency-Key" => "abc" })
 
-      expect(logger).to have_received(:info).with("[OpenFactura] POST /v1/test")
-      expect(logger).to have_received(:debug).with(/Options:/)
+      log = output.string
+      expect(log).to include("[OpenFactura] POST /v1/test")
+      expect(log).to include("[FILTERED]")           # apikey redacted
+      expect(log).to include("Idempotency-Key")      # non-sensitive header still logged
+      expect(log).not_to include("test-api-key")     # the real apikey value
+      expect(log).not_to include("11111111-1")       # the DTE body (RUT) is never logged
+    end
+  end
+
+  describe "per-instance connection isolation (multi-tenant)" do
+    it "sends each client's own apikey instead of a shared class-level one" do
+      config.api_key = "key-tenant-a"
+      client_a = described_class.new(config)
+      config.api_key = "key-tenant-b"
+      client_b = described_class.new(config)
+
+      stub_a = stub_request(:get, "#{config.base_url}/v1/a")
+        .with(headers: { "apikey" => "key-tenant-a" }).to_return(status: 200, body: "{}")
+      stub_b = stub_request(:get, "#{config.base_url}/v1/b")
+        .with(headers: { "apikey" => "key-tenant-b" }).to_return(status: 200, body: "{}")
+
+      expect { client_a.get("/v1/a") }.not_to raise_error
+      expect { client_b.get("/v1/b") }.not_to raise_error
+      expect(stub_a).to have_been_requested
+      expect(stub_b).to have_been_requested
     end
   end
 end
