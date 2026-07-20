@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "base64"
 require_relative "document"
 
 module Openfactura
@@ -85,7 +86,6 @@ module Openfactura
     def decode_pdf
       return nil unless @pdf
 
-      require "base64"
       Base64.decode64(@pdf)
     end
 
@@ -94,7 +94,6 @@ module Openfactura
     def decode_xml
       return nil unless @xml
 
-      require "base64"
       Base64.decode64(@xml).force_encoding("ISO-8859-1").encode("UTF-8")
     end
 
@@ -103,7 +102,6 @@ module Openfactura
     def decode_cedible
       return nil unless @cedible
 
-      require "base64"
       Base64.decode64(@cedible)
     end
 

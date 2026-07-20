@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "base64"
+
 module Openfactura
   # Document response model
   class DocumentResponse
@@ -45,7 +47,6 @@ module Openfactura
     def decode_xml
       return nil unless @xml
 
-      require "base64"
       Base64.decode64(@xml).force_encoding("ISO-8859-1").encode("UTF-8")
     end
 
@@ -53,7 +54,6 @@ module Openfactura
     def decode_pdf
       return nil unless @pdf
 
-      require "base64"
       Base64.decode64(@pdf)
     end
 
@@ -62,7 +62,6 @@ module Openfactura
     def decode_stamp
       return nil unless @stamp
 
-      require "base64"
       Base64.decode64(@stamp)
     end
 
@@ -76,7 +75,6 @@ module Openfactura
     def decode_logo
       return nil unless @logo
 
-      require "base64"
       Base64.decode64(@logo)
     end
   end

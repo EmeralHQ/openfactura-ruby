@@ -60,9 +60,15 @@ jobs:
       - run: bundle exec rake build
       # Fuera del repo y sin bundler: verifica que el .gem publicable se instala
       # y carga solo con sus runtime deps, sin las de desarrollo.
-      - name: Verificar que el gem construido instala y carga
-        run: |
-          gem install --no-document pkg/openfactura-*.gem
-          cd "$(mktemp -d)"
-          unset BUNDLE_GEMFILE RUBYOPT
-          ruby -e 'require "openfactura"; puts Openfactura::VERSION'
+      - name: Verificar que el gem construido instala y carga (Ruby 3.3)
+        run: bash script/smoke_installed_gem.sh
+      # Repetido en 3.4 dentro del MISMO job para no renombrar el check "Build gem"
+      # (el ruleset de main lo exige por nombre; una matriz lo partiría en dos).
+      # 3.4 es donde importa: base64 dejó de ser default gem y pasó a bundled, así
+      # que un require no declarado explota acá y no en 3.3.
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: false
+      - name: Verificar que el gem construido instala y carga (Ruby 3.4)
+        run: bash script/smoke_installed_gem.sh
