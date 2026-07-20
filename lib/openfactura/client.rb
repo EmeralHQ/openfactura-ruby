@@ -17,10 +17,12 @@ module Openfactura
       @config = config
       # Validate configuration when client is actually used (lazy validation)
       config.validate! if config.respond_to?(:validate!)
-      self.class.base_uri config.base_url
-      self.class.default_timeout config.timeout
-      self.class.headers "Content-Type" => "application/json"
-      self.class.headers "apikey" => config.api_key if config.api_key
+      # Per-instance, immutable connection options. Nothing is written to class-level HTTParty
+      # state, so two clients built with different keys never clobber each other (see #6).
+      @base_uri = config.base_url
+      headers = { "Content-Type" => "application/json" }
+      headers["apikey"] = config.api_key if config.api_key
+      @default_options = { timeout: config.timeout, headers: headers.freeze }.freeze
     end
 
     # Perform GET request
@@ -30,14 +32,9 @@ module Openfactura
 
     # Perform POST request
     def post(path, options = {})
-      # Merge custom headers with default headers
-      if options[:headers]
-        options[:headers] = (self.class.default_options[:headers] || {}).merge(options[:headers])
-      end
-      # Convert body hash to JSON if it's a hash
-      if options[:body].is_a?(Hash)
-        options[:body] = options[:body].to_json
-      end
+      options = options.dup
+      # Convert body hash to JSON if it's a hash. Header merging happens centrally in `request`.
+      options[:body] = options[:body].to_json if options[:body].is_a?(Hash)
       request(:post, path, options)
     end
 
@@ -54,17 +51,14 @@ module Openfactura
     private
 
     def request(method, path, options = {})
-      log_request(method, path, options)
-
-      # Merge headers properly if they exist
-      if options[:headers] && self.class.default_options[:headers]
-        options[:headers] = self.class.default_options[:headers].merge(options[:headers])
-      end
+      merged = build_options(options)
+      log_request(method, path, merged)
 
       begin
-        # HTTParty doesn't raise exceptions for non-2xx by default
-        # We need to check the response code manually
-        response = self.class.public_send(method, path, options)
+        # HTTParty doesn't raise exceptions for non-2xx by default; the status is checked in
+        # handle_response. Dispatch through HTTParty's module functions with fully-formed per-request
+        # options so no shared class-level state is read or written (see #6).
+        response = HTTParty.public_send(method, "#{@base_uri}#{path}", merged)
         handle_response(response)
       rescue Openfactura::ApiError
         # Re-raise our typed errors untouched. This must catch the base ApiError (raised for 400
@@ -146,11 +140,33 @@ module Openfactura
       response.body
     end
 
-    def log_request(method, path, options)
-      return unless config.logger
+    # Merge per-call options over the instance defaults without mutating either the caller's
+    # options or the frozen instance defaults. Headers are merged so the apikey/Content-Type
+    # defaults survive alongside per-call headers (e.g. Idempotency-Key).
+    def build_options(options)
+      headers = @default_options[:headers].merge(options[:headers] || {})
+      @default_options.merge(options).merge(headers: headers)
+    end
 
-      config.logger.info("[OpenFactura] #{method.upcase} #{path}")
-      config.logger.debug("[OpenFactura] Options: #{options.inspect}") if options.any?
+    # Header names whose value must never reach the logs (case-insensitive).
+    SENSITIVE_HEADERS = ["apikey"].freeze
+
+    def log_request(method, path, options)
+      logger = config.logger
+      return unless logger
+
+      logger.info("[OpenFactura] #{method.upcase} #{path}")
+      # Never log the request body (it carries the DTE with real RUTs and amounts) and redact the
+      # apikey. Only method, path and the non-sensitive headers (e.g. Idempotency-Key) are logged.
+      logger.debug("[OpenFactura] headers: #{redact_headers(options[:headers])}")
+    end
+
+    def redact_headers(headers)
+      return "{}" unless headers.is_a?(Hash)
+
+      headers.to_h do |key, value|
+        [key, SENSITIVE_HEADERS.include?(key.to_s.downcase) ? "[FILTERED]" : value]
+      end.inspect
     end
   end
 end
