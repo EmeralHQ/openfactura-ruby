@@ -3,6 +3,8 @@
 require "httparty"
 require "json"
 require "net/http"
+require "openssl"
+require "socket"
 require_relative "config"
 require_relative "error"
 
@@ -10,6 +12,30 @@ module Openfactura
   # HTTP client for Open Factura API
   class Client
     include HTTParty
+
+    # Transport-level failures, the only exceptions this client translates into ApiError. Everything
+    # else propagates untouched: an ApiError from handle_response keeps its status_code and
+    # response_body, and a bug in the gem (NoMethodError, TypeError…) surfaces as itself instead of
+    # being disguised as an API failure with its backtrace lost (see #12).
+    #
+    # Do NOT add a `rescue StandardError` fallback here. That is exactly what this fix removes.
+    TIMEOUT_ERRORS = [
+      Timeout::Error, # Net::OpenTimeout and Net::ReadTimeout descend from this
+      Net::ReadTimeout,
+      Net::OpenTimeout,
+    ].freeze
+
+    CONNECTION_ERRORS = [
+      SocketError,             # DNS resolution failure
+      OpenSSL::SSL::SSLError,  # TLS handshake/certificate failure
+      Errno::ECONNREFUSED,
+      Errno::ECONNRESET,
+      Errno::EHOSTUNREACH,
+      Errno::ENETUNREACH,
+      Errno::EPIPE,
+      EOFError,                # connection closed mid-response
+      HTTParty::Error,         # e.g. RedirectionTooDeep
+    ].freeze
 
     attr_reader :config
 
@@ -60,15 +86,10 @@ module Openfactura
         # options so no shared class-level state is read or written (see #6).
         response = HTTParty.public_send(method, "#{@base_uri}#{path}", merged)
         handle_response(response)
-      rescue Openfactura::ApiError
-        # Re-raise our typed errors untouched. This must catch the base ApiError (raised for 400
-        # and other unmapped statuses), not only its subclasses, or the generic StandardError
-        # rescue below would re-wrap it and drop its status_code and response_body.
-        raise
-      rescue Timeout::Error, Net::ReadTimeout => e
+      rescue *TIMEOUT_ERRORS => e
         raise Openfactura::ApiError.new("Request timeout: #{e.message}")
-      rescue StandardError => e
-        raise Openfactura::ApiError.new("Request failed: #{e.message}")
+      rescue *CONNECTION_ERRORS => e
+        raise Openfactura::ApiError.new("Connection failed: #{e.message}")
       end
     end
 
