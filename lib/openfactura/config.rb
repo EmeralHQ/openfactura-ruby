@@ -12,6 +12,13 @@ module Openfactura
     PRODUCTION_URL = "https://api.haulmer.com"
     SANDBOX_URL = "https://dev-api.haulmer.com"
 
+    # Single lookup table for environment → base URL, shared with Client. Frozen: it is a constant,
+    # not configuration, so reading it from Client does not reintroduce shared mutable state.
+    ENVIRONMENT_URLS = {
+      production: PRODUCTION_URL,
+      sandbox: SANDBOX_URL,
+    }.freeze
+
     setting :api_key, default: nil
     setting :environment, default: :sandbox # :sandbox or :production
     setting :timeout, default: 30
@@ -64,7 +71,24 @@ module Openfactura
       def base_url
         return api_base_url if api_base_url
 
-        environment == :production ? PRODUCTION_URL : SANDBOX_URL
+        ENVIRONMENT_URLS.fetch(environment, SANDBOX_URL)
+      end
+
+      # Snapshot of the configured defaults, as the keyword arguments `Client.new` expects.
+      #
+      # This is the ONLY bridge between global configuration and a client, and the facade calls it
+      # exactly once per client — at construction. Nothing reads Config during a request, which is
+      # what makes a client safe to hand to another thread or another tenant.
+      #
+      # @return [Hash] keyword arguments for Client.new
+      def to_client_options
+        {
+          api_key: api_key,
+          environment: environment,
+          timeout: timeout,
+          logger: logger,
+          api_base_url: api_base_url,
+        }
       end
 
       # Validate configuration

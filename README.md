@@ -591,6 +591,31 @@ end
 | `logger` | Object | `nil` | Custom logger (uses Rails.logger if available) |
 | `api_base_url` | String | `nil` | Override base URL (uses environment-based URL if nil) |
 
+Reconfiguring rebuilds the default client, so a later `Openfactura.configure` takes effect.
+
+### Multi-tenant applications
+
+`Openfactura.configure` sets up a single default client, which is what most applications need. If
+your application emits documents on behalf of several contributors, build a client per tenant
+instead — each one holds its own credentials and shares nothing with the others, so it is safe to
+use them concurrently:
+
+```ruby
+client = Openfactura::Client.new(
+  api_key:     tenant.openfactura_api_key,
+  environment: Rails.env.production? ? :production : :sandbox,
+  timeout:     30,          # optional
+  logger:      Rails.logger # optional
+)
+
+client.documents.emit(dte: dte, issuer: issuer)
+client.documents.find_by_token(token: token, value: "pdf")
+client.organizations.current
+```
+
+Every client exposes the same DSL as the `Openfactura.*` facade — `documents` and `organizations`.
+A client is frozen once built: to change credentials or environment, build a new one.
+
 ### Environment URLs
 
 - **Sandbox**: `https://dev-api.haulmer.com`

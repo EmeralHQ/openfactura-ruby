@@ -5,6 +5,10 @@ module Openfactura
   VERSION: String
 
   class Config
+    PRODUCTION_URL: String
+    SANDBOX_URL: String
+    ENVIRONMENT_URLS: Hash[Symbol, String]
+
     def self.api_key: () -> String?
     def self.api_key=: (String?) -> String?
     def self.environment: () -> Symbol
@@ -17,6 +21,34 @@ module Openfactura
     def self.api_base_url=: (String?) -> String?
     def self.base_url: () -> String
     def self.validate!: () -> void
+    def self.to_client_options: () -> Hash[Symbol, untyped]
+  end
+
+  class Client
+    DEFAULT_ENVIRONMENT: Symbol
+    DEFAULT_TIMEOUT: Integer
+    VALID_ENVIRONMENTS: Array[Symbol]
+
+    attr_reader api_key: String
+    attr_reader environment: Symbol
+    attr_reader timeout: Integer
+    attr_reader logger: untyped
+    attr_reader base_url: String
+    attr_reader documents: DSL::Documents
+    attr_reader organizations: DSL::Organizations
+
+    def initialize: (
+      api_key: String,
+      ?environment: (Symbol | String)?,
+      ?timeout: Integer?,
+      ?logger: untyped,
+      ?api_base_url: String?
+    ) -> void
+
+    def get: (String path, ?Hash[Symbol, untyped] options) -> untyped
+    def post: (String path, ?Hash[Symbol, untyped] options) -> untyped
+    def put: (String path, ?Hash[Symbol, untyped] options) -> untyped
+    def delete: (String path, ?Hash[Symbol, untyped] options) -> untyped
   end
 
   def self.configure: () { (Config) -> void } -> void

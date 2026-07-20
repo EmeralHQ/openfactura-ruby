@@ -21,6 +21,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `spec/factories/`, so specs build test data with `build(:dte)` instead of repeating literals
 
 ### Changed
+- **`Openfactura::Client` is now per-instance and self-contained. Breaking.** It takes its options as
+  keyword arguments — `Client.new(api_key:, environment:, timeout:, logger:, api_base_url:)` — instead
+  of reading `Openfactura::Config`, and it is frozen once built. Nothing is consulted at request time,
+  so two clients with different keys are fully independent and a client is safe to share across
+  threads. Each client exposes its own `#documents` and `#organizations`, which makes multi-tenant
+  applications possible:
+  ```ruby
+  client = Openfactura::Client.new(api_key: tenant.key, environment: :production)
+  client.documents.emit(dte: dte, issuer: issuer)
+  ```
+  **Migration**: `Client.new` no longer accepts a config object. `Client.new` → `Client.new(api_key: …)`;
+  `client.config` is gone, replaced by the readers `#api_key`, `#environment`, `#timeout`, `#logger`
+  and `#base_url`. Consumers using the `Openfactura.configure` + `Openfactura.documents` facade —
+  including the Rails initializer the generator writes — need no changes (#11, absorbs #6)
+- `Openfactura.configure` now rebuilds the default client. It used to be memoized on first use, so
+  every `configure` after the first request was silently ignored and the SDK kept using the old API
+  key with no indication. The default client is also built under a mutex, so concurrent first calls
+  cannot each construct one
+- `Openfactura::Config` survives as the source of defaults for the facade's default client only; it
+  is read exactly once, when that client is built. Its public accessors are unchanged, plus a new
+  `Config.to_client_options`. `Config::ENVIRONMENT_URLS` is now the single environment → base URL
+  lookup table shared with `Client`
 - Expanded `CLAUDE.md` with testing, RuboCop, backward-compatibility and secret-handling rules
 - Integration specs no longer run in the default `bundle exec rspec` suite. They hit the real
   sandbox and need credentials; opt in with `RUN_INTEGRATION=1` or `--tag integration`

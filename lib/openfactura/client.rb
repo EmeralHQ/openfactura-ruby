@@ -13,6 +13,10 @@ module Openfactura
   class Client
     include HTTParty
 
+    DEFAULT_ENVIRONMENT = :sandbox
+    DEFAULT_TIMEOUT = 30
+    VALID_ENVIRONMENTS = %i[sandbox production].freeze
+
     # Transport-level failures, the only exceptions this client translates into ApiError. Everything
     # else propagates untouched: an ApiError from handle_response keeps its status_code and
     # response_body, and a bug in the gem (NoMethodError, TypeError…) surfaces as itself instead of
@@ -37,18 +41,40 @@ module Openfactura
       HTTParty::Error,         # e.g. RedirectionTooDeep
     ].freeze
 
-    attr_reader :config
+    attr_reader :api_key, :environment, :timeout, :logger, :base_url, :documents, :organizations
 
-    def initialize(config = Openfactura::Config)
-      @config = config
-      # Validate configuration when client is actually used (lazy validation)
-      config.validate! if config.respond_to?(:validate!)
-      # Per-instance, immutable connection options. Nothing is written to class-level HTTParty
-      # state, so two clients built with different keys never clobber each other (see #6).
-      @base_uri = config.base_url
-      headers = { "Content-Type" => "application/json" }
-      headers["apikey"] = config.api_key if config.api_key
-      @default_options = { timeout: config.timeout, headers: headers.freeze }.freeze
+    # A self-contained, immutable client. Every option it needs is passed in and frozen here, so a
+    # request never consults global state: two clients built with different keys are fully
+    # independent, and a client is safe to share across threads (see #11).
+    #
+    # `Openfactura::Config` is deliberately NOT read here. It survives only as the source of
+    # defaults for the facade's default client (`Openfactura.documents`), and the facade resolves it
+    # once at construction time. The frozen `Config::ENVIRONMENT_URLS` constant read below is not
+    # that global state — it is a lookup table, not mutable configuration.
+    #
+    # @param api_key [String] contributor API key. Required: there is no global fallback
+    # @param environment [Symbol] :sandbox (default) or :production
+    # @param timeout [Integer] request timeout in seconds
+    # @param logger [Logger, nil] receives method/path and redacted headers; never the body
+    # @param api_base_url [String, nil] overrides the environment-derived base URL
+    # @raise [Openfactura::ValidationError] if the api_key is blank or the environment is unknown
+    def initialize(api_key:, environment: DEFAULT_ENVIRONMENT, timeout: DEFAULT_TIMEOUT, logger: nil,
+      api_base_url: nil)
+      @api_key = api_key
+      @environment = environment.nil? ? DEFAULT_ENVIRONMENT : environment.to_sym
+      @timeout = timeout || DEFAULT_TIMEOUT
+      @logger = logger
+      validate!
+
+      @base_url = api_base_url || Config::ENVIRONMENT_URLS.fetch(@environment)
+      headers = { "Content-Type" => "application/json", "apikey" => @api_key }.freeze
+      @default_options = { timeout: @timeout, headers: headers }.freeze
+
+      # Built eagerly rather than memoized on first call: memoizing would mean writing to an ivar
+      # from whatever thread got there first, which is exactly the race this redesign removes.
+      @documents = DSL::Documents.new(self)
+      @organizations = DSL::Organizations.new(self)
+      freeze
     end
 
     # Perform GET request
@@ -76,6 +102,14 @@ module Openfactura
 
     private
 
+    def validate!
+      raise ValidationError, "API key is required" if @api_key.nil? || @api_key.to_s.strip.empty?
+
+      unless VALID_ENVIRONMENTS.include?(@environment)
+        raise ValidationError, "Environment must be :sandbox or :production"
+      end
+    end
+
     def request(method, path, options = {})
       merged = build_options(options)
       log_request(method, path, merged)
@@ -84,7 +118,7 @@ module Openfactura
         # HTTParty doesn't raise exceptions for non-2xx by default; the status is checked in
         # handle_response. Dispatch through HTTParty's module functions with fully-formed per-request
         # options so no shared class-level state is read or written (see #6).
-        response = HTTParty.public_send(method, "#{@base_uri}#{path}", merged)
+        response = HTTParty.public_send(method, "#{@base_url}#{path}", merged)
         handle_response(response)
       rescue *TIMEOUT_ERRORS => e
         raise Openfactura::ApiError.new("Request timeout: #{e.message}")
@@ -173,13 +207,12 @@ module Openfactura
     SENSITIVE_HEADERS = ["apikey"].freeze
 
     def log_request(method, path, options)
-      logger = config.logger
-      return unless logger
+      return unless @logger
 
-      logger.info("[OpenFactura] #{method.upcase} #{path}")
+      @logger.info("[OpenFactura] #{method.upcase} #{path}")
       # Never log the request body (it carries the DTE with real RUTs and amounts) and redact the
       # apikey. Only method, path and the non-sensitive headers (e.g. Idempotency-Key) are logged.
-      logger.debug("[OpenFactura] headers: #{redact_headers(options[:headers])}")
+      @logger.debug("[OpenFactura] headers: #{redact_headers(options[:headers])}")
     end
 
     def redact_headers(headers)
