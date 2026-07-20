@@ -4,18 +4,15 @@ require "logger"
 require "stringio"
 
 RSpec.describe Openfactura::Client do
+  # El cliente se construye con sus propias opciones: no lee Openfactura::Config, así que estos
+  # specs ya no dependen de dejar el estado global en una forma particular.
   let(:config) { Openfactura::Config }
-  let(:client) { described_class.new(config) }
-
-  before do
-    config.api_key = "test-api-key"
-    config.environment = :sandbox
-    config.api_base_url = nil
-  end
+  let(:base_url) { Openfactura::Config::SANDBOX_URL }
+  let(:client) { described_class.new(api_key: "test-api-key", environment: :sandbox) }
 
   describe "#get" do
     it "makes a GET request" do
-      stub_request(:get, "#{config.base_url}/v1/test")
+      stub_request(:get, "#{base_url}/v1/test")
         .with(headers: { "apikey" => "test-api-key", "Content-Type" => "application/json" })
         .to_return(status: 200, body: '{"success": true}', headers: { "Content-Type" => "application/json" })
 
@@ -24,14 +21,14 @@ RSpec.describe Openfactura::Client do
     end
 
     it "raises AuthenticationError on 401" do
-      stub_request(:get, "#{config.base_url}/v1/test")
+      stub_request(:get, "#{base_url}/v1/test")
         .to_return(status: 401, body: "", headers: { "Content-Type" => "application/json" })
 
       expect { client.get("/v1/test") }.to raise_error(Openfactura::AuthenticationError)
     end
 
     it "raises NotFoundError on 404" do
-      stub_request(:get, "#{config.base_url}/v1/test")
+      stub_request(:get, "#{base_url}/v1/test")
         .to_return(status: 404, body: "", headers: { "Content-Type" => "application/json" })
 
       expect { client.get("/v1/test") }.to raise_error(Openfactura::NotFoundError)
@@ -40,7 +37,7 @@ RSpec.describe Openfactura::Client do
 
   describe "#post" do
     it "makes a POST request with body" do
-      stub_request(:post, "#{config.base_url}/v1/test")
+      stub_request(:post, "#{base_url}/v1/test")
         .with(
           headers: { "apikey" => "test-api-key", "Content-Type" => "application/json" },
           body: "{\"name\":\"test\"}"
@@ -63,7 +60,7 @@ RSpec.describe Openfactura::Client do
         }
       }.to_json
 
-      stub_request(:post, "#{config.base_url}/v1/test")
+      stub_request(:post, "#{base_url}/v1/test")
         .to_return(status: 400, body: error_response, headers: { "Content-Type" => "application/json" })
 
       expect do
@@ -90,7 +87,7 @@ RSpec.describe Openfactura::Client do
         }
       }.to_json
 
-      stub_request(:post, "#{config.base_url}/v1/test")
+      stub_request(:post, "#{base_url}/v1/test")
         .to_return(status: 400, body: error_response, headers: { "Content-Type" => "application/json" })
 
       expect do
@@ -104,7 +101,7 @@ RSpec.describe Openfactura::Client do
     end
 
     it "merges custom headers with the default headers" do
-      stub_request(:post, "#{config.base_url}/v1/test")
+      stub_request(:post, "#{base_url}/v1/test")
         .with(headers: { "apikey" => "test-api-key", "X-Custom" => "yes" })
         .to_return(status: 200, body: "{}", headers: { "Content-Type" => "application/json" })
 
@@ -114,7 +111,7 @@ RSpec.describe Openfactura::Client do
 
   describe "#put" do
     it "makes a PUT request" do
-      stub_request(:put, "#{config.base_url}/v1/test")
+      stub_request(:put, "#{base_url}/v1/test")
         .to_return(status: 200, body: '{"ok": true}', headers: { "Content-Type" => "application/json" })
 
       response = client.put("/v1/test")
@@ -124,7 +121,7 @@ RSpec.describe Openfactura::Client do
 
   describe "#delete" do
     it "makes a DELETE request" do
-      stub_request(:delete, "#{config.base_url}/v1/test")
+      stub_request(:delete, "#{base_url}/v1/test")
         .to_return(status: 200, body: '{"ok": true}', headers: { "Content-Type" => "application/json" })
 
       response = client.delete("/v1/test")
@@ -134,28 +131,28 @@ RSpec.describe Openfactura::Client do
 
   describe "HTTP error handling" do
     it "raises RateLimitError on 429" do
-      stub_request(:get, "#{config.base_url}/v1/test")
+      stub_request(:get, "#{base_url}/v1/test")
         .to_return(status: 429, body: "", headers: { "Content-Type" => "application/json" })
 
       expect { client.get("/v1/test") }.to raise_error(Openfactura::RateLimitError, /Rate limit exceeded/)
     end
 
     it "raises ServerError on 500" do
-      stub_request(:get, "#{config.base_url}/v1/test")
+      stub_request(:get, "#{base_url}/v1/test")
         .to_return(status: 500, body: "boom", headers: { "Content-Type" => "text/plain" })
 
       expect { client.get("/v1/test") }.to raise_error(Openfactura::ServerError)
     end
 
     it "raises ApiError on an unmapped 4xx without an error body" do
-      stub_request(:get, "#{config.base_url}/v1/test")
+      stub_request(:get, "#{base_url}/v1/test")
         .to_return(status: 418, body: "", headers: { "Content-Type" => "application/json" })
 
       expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /418/)
     end
 
     it "preserves status_code and response_body on an unmapped 4xx error" do
-      stub_request(:get, "#{config.base_url}/v1/test")
+      stub_request(:get, "#{base_url}/v1/test")
         .to_return(status: 418, body: '{"error":"teapot"}', headers: { "Content-Type" => "application/json" })
 
       expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError) do |error|
@@ -165,13 +162,13 @@ RSpec.describe Openfactura::Client do
     end
 
     it "wraps a network timeout in an ApiError" do
-      stub_request(:get, "#{config.base_url}/v1/test").to_timeout
+      stub_request(:get, "#{base_url}/v1/test").to_timeout
 
       expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /Request timeout/)
     end
 
     it "preserves the original exception as the cause when wrapping a timeout" do
-      stub_request(:get, "#{config.base_url}/v1/test").to_timeout
+      stub_request(:get, "#{base_url}/v1/test").to_timeout
 
       expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError) do |error|
         expect(error.cause).to be_a(Timeout::Error)
@@ -187,7 +184,7 @@ RSpec.describe Openfactura::Client do
       "a connection reset mid-response" => Errno::ECONNRESET.new("Connection reset by peer"),
     }.each do |description, exception|
       it "wraps #{description} in an ApiError" do
-        stub_request(:get, "#{config.base_url}/v1/test").to_raise(exception)
+        stub_request(:get, "#{base_url}/v1/test").to_raise(exception)
 
         expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /Connection failed/)
       end
@@ -197,34 +194,34 @@ RSpec.describe Openfactura::Client do
     # un falso "error de API": el consumidor veía ApiError("Request failed: undefined method…"),
     # rescataba pensando que era la red, y el backtrace del bug real se perdía.
     it "lets a programming error propagate instead of disguising it as an API failure" do
-      stub_request(:get, "#{config.base_url}/v1/test")
+      stub_request(:get, "#{base_url}/v1/test")
         .to_raise(NoMethodError.new("undefined method `foo' for nil"))
 
       expect { client.get("/v1/test") }.to raise_error(NoMethodError, /undefined method/)
     end
 
     it "does not translate a non-transport StandardError into an ApiError" do
-      stub_request(:get, "#{config.base_url}/v1/test").to_raise(RuntimeError.new("boom"))
+      stub_request(:get, "#{base_url}/v1/test").to_raise(RuntimeError.new("boom"))
 
       expect { client.get("/v1/test") }.to raise_error(RuntimeError, "boom")
     end
 
     it "extracts a flat top-level message from an error body without an error object" do
-      stub_request(:post, "#{config.base_url}/v1/test")
+      stub_request(:post, "#{base_url}/v1/test")
         .to_return(status: 400, body: '{"detail":"algo salió mal"}', headers: { "Content-Type" => "application/json" })
 
       expect { client.post("/v1/test", body: {}) }.to raise_error(Openfactura::ApiError, /algo salió mal/)
     end
 
     it "unwraps a nested message object from an error body" do
-      stub_request(:post, "#{config.base_url}/v1/test")
+      stub_request(:post, "#{base_url}/v1/test")
         .to_return(status: 400, body: '{"message":{"message":"nested detail"}}', headers: { "Content-Type" => "application/json" })
 
       expect { client.post("/v1/test", body: {}) }.to raise_error(Openfactura::ApiError, /nested detail/)
     end
 
     it "returns the raw body when the error body is not valid JSON" do
-      stub_request(:post, "#{config.base_url}/v1/test")
+      stub_request(:post, "#{base_url}/v1/test")
         .to_return(status: 400, body: "plain text failure", headers: { "Content-Type" => "text/plain" })
 
       expect { client.post("/v1/test", body: {}) }.to raise_error(Openfactura::ApiError, /plain text failure/)
@@ -234,13 +231,10 @@ RSpec.describe Openfactura::Client do
   describe "request logging (secret redaction)" do
     let(:output) { StringIO.new }
     let(:logger) { Logger.new(output, level: Logger::DEBUG) }
-
-    before { config.logger = logger }
-
-    after { config.logger = nil }
+    let(:client) { described_class.new(api_key: "test-api-key", environment: :sandbox, logger: logger) }
 
     it "logs method and path, redacts the apikey, and never logs the request body" do
-      stub_request(:post, "#{config.base_url}/v1/test")
+      stub_request(:post, "#{base_url}/v1/test")
         .to_return(status: 200, body: "{}", headers: { "Content-Type" => "application/json" })
 
       client.post("/v1/test", body: { rut: "11111111-1", amount: 5000 }, headers: { "Idempotency-Key" => "abc" })
@@ -256,20 +250,93 @@ RSpec.describe Openfactura::Client do
 
   describe "per-instance connection isolation (multi-tenant)" do
     it "sends each client's own apikey instead of a shared class-level one" do
-      config.api_key = "key-tenant-a"
-      client_a = described_class.new(config)
-      config.api_key = "key-tenant-b"
-      client_b = described_class.new(config)
+      client_a = described_class.new(api_key: "key-tenant-a")
+      client_b = described_class.new(api_key: "key-tenant-b")
 
-      stub_a = stub_request(:get, "#{config.base_url}/v1/a")
+      stub_a = stub_request(:get, "#{base_url}/v1/a")
         .with(headers: { "apikey" => "key-tenant-a" }).to_return(status: 200, body: "{}")
-      stub_b = stub_request(:get, "#{config.base_url}/v1/b")
+      stub_b = stub_request(:get, "#{base_url}/v1/b")
         .with(headers: { "apikey" => "key-tenant-b" }).to_return(status: 200, body: "{}")
 
       expect { client_a.get("/v1/a") }.not_to raise_error
       expect { client_b.get("/v1/b") }.not_to raise_error
       expect(stub_a).to have_been_requested
       expect(stub_b).to have_been_requested
+    end
+
+    it "ignores Config entirely, so mutating it mid-flight cannot switch a client's tenant" do
+      client_a = described_class.new(api_key: "key-tenant-a", environment: :sandbox)
+
+      # El escenario que rompía antes: alguien reconfigura el estado global entre la construcción
+      # del cliente y su uso. Un cliente autocontenido no puede verlo.
+      config.api_key = "key-tenant-b"
+      config.environment = :production
+
+      stub = stub_request(:get, "#{base_url}/v1/a")
+        .with(headers: { "apikey" => "key-tenant-a" }).to_return(status: 200, body: "{}")
+
+      client_a.get("/v1/a")
+      expect(stub).to have_been_requested
+    ensure
+      Openfactura.reset!
+    end
+
+    it "keeps each client's environment independent" do
+      sandbox = described_class.new(api_key: "k", environment: :sandbox)
+      production = described_class.new(api_key: "k", environment: :production)
+
+      expect(sandbox.base_url).to eq(Openfactura::Config::SANDBOX_URL)
+      expect(production.base_url).to eq(Openfactura::Config::PRODUCTION_URL)
+    end
+  end
+
+  describe "construction" do
+    it "defaults to the sandbox environment" do
+      expect(described_class.new(api_key: "k").environment).to eq(:sandbox)
+    end
+
+    it "accepts the environment as a string" do
+      expect(described_class.new(api_key: "k", environment: "production").environment).to eq(:production)
+    end
+
+    it "lets api_base_url override the environment-derived URL" do
+      client = described_class.new(api_key: "k", environment: :production, api_base_url: "https://custom.test")
+
+      expect(client.base_url).to eq("https://custom.test")
+    end
+
+    it "requires an api_key" do
+      expect { described_class.new(api_key: nil) }
+        .to raise_error(Openfactura::ValidationError, /API key is required/)
+    end
+
+    it "rejects a blank api_key" do
+      expect { described_class.new(api_key: "   ") }
+        .to raise_error(Openfactura::ValidationError, /API key is required/)
+    end
+
+    it "rejects an unknown environment" do
+      expect { described_class.new(api_key: "k", environment: :staging) }
+        .to raise_error(Openfactura::ValidationError, /Environment must be/)
+    end
+
+    # La inmutabilidad es lo que hace seguro compartir un cliente entre threads: si nada puede
+    # reasignar la api_key después de construirlo, no hay ventana donde un thread vea la del otro.
+    it "is frozen, so its options cannot be swapped after construction" do
+      expect(described_class.new(api_key: "k")).to be_frozen
+    end
+
+    it "exposes its own DSL accessors" do
+      client = described_class.new(api_key: "k")
+
+      expect(client.documents).to be_a(Openfactura::DSL::Documents)
+      expect(client.organizations).to be_a(Openfactura::DSL::Organizations)
+    end
+
+    it "returns the same DSL instances on repeated calls" do
+      client = described_class.new(api_key: "k")
+
+      expect(client.documents).to be(client.documents)
     end
   end
 end

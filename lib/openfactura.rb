@@ -15,15 +15,28 @@ if defined?(Rails)
   require_relative "openfactura/railtie"
 end
 
+# Facade over a single default client, for the common single-tenant case:
+#
+#   Openfactura.configure { |c| c.api_key = ENV["OF_KEY"] }
+#   Openfactura.documents.emit(dte: dte, issuer: issuer)
+#
+# Applications serving several contributors should build clients directly instead — each one is
+# self-contained and independent, so there is no global state to collide over:
+#
+#   client = Openfactura::Client.new(api_key: tenant.api_key, environment: :production)
+#   client.documents.emit(dte: dte, issuer: issuer)
 module Openfactura
+  @mutex = Mutex.new
+
   class << self
-    # Configure Open Factura SDK
-    # Validation is done lazily when the API is actually used, not during configuration
-    # This allows Rails to load the initializer even if API key is not yet set
+    # Configure the default client. Validation stays lazy — it happens when the client is actually
+    # built — so a Rails initializer can load before the API key is known.
+    #
+    # Reconfiguring discards the current default client so the new settings take effect. Before, the
+    # client was memoized on first use and every later `configure` was silently ignored.
     def configure
       yield(Config) if block_given?
-      # Note: validate! is called lazily in Client#initialize instead of here
-      # This allows configuration to be set up without immediately requiring an API key
+      reset!
     end
 
     # Get current configuration
@@ -31,25 +44,28 @@ module Openfactura
       Config
     end
 
-    # Get HTTP client instance
+    # The default client, built from Config on first use.
+    # @raise [Openfactura::ValidationError] if the api_key has not been configured
     def client
-      @client ||= Client.new
+      # Double-checked under a mutex: without it two threads racing the first call would each build
+      # a client and one would be silently discarded.
+      return @client if @client
+
+      @mutex.synchronize { @client ||= Client.new(**Config.to_client_options) }
     end
 
-    # DSL accessors
+    # DSL accessors, delegated to the default client.
     def documents
-      @documents ||= DSL::Documents.new(client)
+      client.documents
     end
 
     def organizations
-      @organizations ||= DSL::Organizations.new(client)
+      client.organizations
     end
 
-    # Reset client instance (useful for testing)
+    # Discard the default client so the next call rebuilds it from the current Config.
     def reset!
-      @client = nil
-      @documents = nil
-      @organizations = nil
+      @mutex.synchronize { @client = nil }
     end
   end
 end

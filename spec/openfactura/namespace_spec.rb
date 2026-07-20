@@ -275,12 +275,7 @@ RSpec.describe "Openfactura namespace implementation" do
     end
 
     it "can instantiate Client" do
-      Openfactura.configure do |config|
-        config.api_key = "test-key"
-        config.environment = :sandbox
-      end
-
-      client = Openfactura::Client.new
+      client = Openfactura::Client.new(api_key: "test-key", environment: :sandbox)
       expect(client).to be_a(Openfactura::Client)
     end
 
