@@ -36,6 +36,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `rubocop-rails` and `rubocop-rails-omakase` development dependencies, unused after the style change
 
 ### Fixed
+- `base64` is now declared as a runtime dependency. `lib/` requires it for the `decode_pdf`,
+  `decode_xml`, `decode_stamp`, `decode_logo` and `decode_cedible` helpers, but it stopped being a
+  Ruby default gem in 3.4 (it is now *bundled*), so on Ruby 3.4+ outside Bundler those calls could
+  raise `LoadError` at runtime. The seven `require "base64"` calls buried inside method bodies were
+  also hoisted to the top of the two files that use it, so a missing dependency fails at load time
+  instead of halfway through a document download (#13)
+- The published gem no longer ships development-only files. `spec.files` rejected `test/` and
+  `features/` (Bundler's default), but this repo uses `spec/`: the packaged `.gem` carried 32 spec
+  files, 15 Claude skill files, `CLAUDE.md`, `Rakefile` and the linter configs against only 22 files
+  of `lib/`. The package went from 79 files to 26 — `lib/`, `sig/`, README, CHANGELOG and licence.
+  No runtime or public API impact; consumers just stop downloading ~2/3 of the archive
 - RuboCop never loaded its configuration: `rubocop-rails-omakase` ships a config file with no
   loadable Ruby, so `require:` raised `LoadError` and every run aborted. Now uses `inherit_gem`,
   and the 84 layout offenses it had been hiding are corrected
