@@ -203,17 +203,18 @@ RSpec.describe Openfactura::DocumentError do
   end
 
   describe "inheritance" do
-    it "inherits from StandardError" do
+    it "inherits from Openfactura::Error (the gem's base error)" do
       error = described_class.new(code: "OF-01", message: "Test")
+      expect(error).to be_a(Openfactura::Error)
       expect(error).to be_a(StandardError)
     end
 
-    it "can be rescued as StandardError" do
+    it "can be rescued as Openfactura::Error" do
       error = described_class.new(code: "OF-01", message: "Test")
 
       begin
         raise error
-      rescue StandardError => e
+      rescue Openfactura::Error => e
         expect(e).to be_a(Openfactura::DocumentError)
         expect(e.code).to eq("OF-01")
       end

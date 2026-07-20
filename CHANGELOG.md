@@ -50,6 +50,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `"Request failed: …"`, discarding `status_code` and `response_body`. It now re-raises any
   `Openfactura::ApiError` untouched, so those two accessors are populated on every API error (the
   error message for those statuses no longer carries the `"Request failed: "` prefix)
+- `DocumentError` now inherits from `Openfactura::Error` instead of `StandardError`, so
+  `rescue Openfactura::Error` catches DTE business errors alongside the rest of the hierarchy
+  (`ApiError`, `ValidationError`…). Its public API (`#code`, `#details`, `#details_for_field`,
+  `#error_fields`, `#to_h`, `#to_s`) is unchanged; code that rescued `StandardError` still works
+- The OF-xx → `DocumentError` mapping in `emit` (`#code`, `#details`) is now proven end-to-end: with
+  the 400 response body preserved, a business error now reliably raises `DocumentError` with its
+  code. Added a real-HTTP regression spec (real `Client` + WebMock) since the prior test mocked the
+  client and hid the gap
 
 ### Security
 - Multi-tenant API key isolation: `Client` no longer configures the connection through shared

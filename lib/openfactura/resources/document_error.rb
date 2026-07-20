@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 module Openfactura
-  # Document error model
-  class DocumentError < StandardError
+  # Document error model. Inherits from Openfactura::Error so `rescue Openfactura::Error` catches
+  # DTE business errors alongside the rest of the gem's error hierarchy (ApiError, ValidationError…).
+  class DocumentError < Openfactura::Error
     # Error codes mapping
     ERROR_CODES = {
       "OF-01" => "Faltan datos obligatorios",
