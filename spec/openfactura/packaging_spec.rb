@@ -19,7 +19,18 @@ RSpec.describe "openfactura.gemspec" do
       expect(runtime_dependencies).to include("base64")
     end
 
-    it "declares every third-party gem that lib/ requires unconditionally" do
+    # Gemas que Ruby movió (o va a mover) de *default* a *bundled*. Mientras son default, un
+    # `require` sin declararlas funciona y el gap es invisible; en cuanto pasan a bundled, el mismo
+    # require levanta LoadError fuera de Bundler en la máquina del consumidor. Lista de Ruby 3.4/3.5.
+    FORMERLY_DEFAULT_GEMS = %w[
+      base64 bigdecimal csv drb getoptlong mutex_m nkf observer abbrev racc rinda syslog
+    ].freeze
+
+    # El chequeo va sobre esta lista y NO sobre "todo lo que no sea stdlib". Una allowlist de stdlib
+    # tendría que ser exhaustiva: bastó con que otro PR agregara `require "socket"` para que este
+    # spec fallara en main sin que nada estuviera realmente mal. Acá un require de stdlib nuevo no
+    # puede romper nada, y la clase de bug que importa (#13) se sigue detectando.
+    it "declares the formerly-default gems that lib/ requires" do
       # La integración con Rails queda fuera a propósito: railtie.rb solo se carga si el consumidor ya
       # tiene Rails (ver el `if defined?(Rails)` en openfactura.rb) y lib/generators/ solo lo carga
       # `rails g` (Zeitwerk lo ignora). Declarar rails como dependencia runtime arrastraría Rails
@@ -32,12 +43,12 @@ RSpec.describe "openfactura.gemspec" do
         .map { |name| name.split("/").first }
         .uniq
 
-      # Las default gems de Ruby (json, date, net/http, securerandom…) no se declaran.
-      stdlib = %w[json date net securerandom logger uri time openssl]
-      third_party = required - stdlib
+      undeclared = (FORMERLY_DEFAULT_GEMS & required) - runtime_dependencies
 
-      expect(third_party - runtime_dependencies).to be_empty,
-        "requeridas en lib/ pero no declaradas en el gemspec: #{(third_party - runtime_dependencies).join(', ')}"
+      expect(undeclared).to be_empty,
+        "lib/ las requiere pero el gemspec no las declara: #{undeclared.join(', ')}. " \
+          "Ruby ya no las provee por defecto: agrégalas con add_dependency o el consumidor " \
+          "verá LoadError fuera de Bundler."
     end
   end
 
