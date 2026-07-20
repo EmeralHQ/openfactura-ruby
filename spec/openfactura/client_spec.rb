@@ -170,10 +170,43 @@ RSpec.describe Openfactura::Client do
       expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /Request timeout/)
     end
 
-    it "wraps an unexpected error in an ApiError" do
+    it "preserves the original exception as the cause when wrapping a timeout" do
+      stub_request(:get, "#{config.base_url}/v1/test").to_timeout
+
+      expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError) do |error|
+        expect(error.cause).to be_a(Timeout::Error)
+      end
+    end
+
+    # Cada uno de estos es un fallo de transporte real: el request nunca llegó a producir una
+    # respuesta HTTP, así que no hay status que mapear y ApiError es la traducción correcta.
+    {
+      "a refused connection" => Errno::ECONNREFUSED.new("Connection refused"),
+      "a DNS resolution failure" => SocketError.new("Failed to open TCP connection"),
+      "a TLS handshake failure" => OpenSSL::SSL::SSLError.new("certificate verify failed"),
+      "a connection reset mid-response" => Errno::ECONNRESET.new("Connection reset by peer"),
+    }.each do |description, exception|
+      it "wraps #{description} in an ApiError" do
+        stub_request(:get, "#{config.base_url}/v1/test").to_raise(exception)
+
+        expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /Connection failed/)
+      end
+    end
+
+    # Regresión de #12. Antes, un `rescue StandardError` convertía cualquier bug del propio gem en
+    # un falso "error de API": el consumidor veía ApiError("Request failed: undefined method…"),
+    # rescataba pensando que era la red, y el backtrace del bug real se perdía.
+    it "lets a programming error propagate instead of disguising it as an API failure" do
+      stub_request(:get, "#{config.base_url}/v1/test")
+        .to_raise(NoMethodError.new("undefined method `foo' for nil"))
+
+      expect { client.get("/v1/test") }.to raise_error(NoMethodError, /undefined method/)
+    end
+
+    it "does not translate a non-transport StandardError into an ApiError" do
       stub_request(:get, "#{config.base_url}/v1/test").to_raise(RuntimeError.new("boom"))
 
-      expect { client.get("/v1/test") }.to raise_error(Openfactura::ApiError, /Request failed: boom/)
+      expect { client.get("/v1/test") }.to raise_error(RuntimeError, "boom")
     end
 
     it "extracts a flat top-level message from an error body without an error object" do

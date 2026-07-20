@@ -50,6 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `"Request failed: …"`, discarding `status_code` and `response_body`. It now re-raises any
   `Openfactura::ApiError` untouched, so those two accessors are populated on every API error (the
   error message for those statuses no longer carries the `"Request failed: "` prefix)
+- `Client#request` no longer swallows programming errors. A blanket `rescue StandardError` turned
+  **any** bug inside the gem — a `NoMethodError`, a `TypeError` — into a fake
+  `ApiError("Request failed: …")`, so callers rescued it as a network problem while the real
+  backtrace was lost. Only transport failures are translated now: timeouts stay
+  `ApiError("Request timeout: …")` and connection failures (DNS, TLS, refused/reset connections)
+  become `ApiError("Connection failed: …")`, both keeping the original exception as `#cause`.
+  Everything else propagates untouched. **Behaviour change**: code that rescued
+  `Openfactura::ApiError` to catch *all* failures will now see genuine bugs surface as themselves —
+  which is the point (#12)
 - `DocumentError` now inherits from `Openfactura::Error` instead of `StandardError`, so
   `rescue Openfactura::Error` catches DTE business errors alongside the rest of the hierarchy
   (`ApiError`, `ValidationError`…). Its public API (`#code`, `#details`, `#details_for_field`,
