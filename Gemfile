@@ -15,7 +15,7 @@ gem "debug", "~> 1.8"
 gem "factory_bot", "~> 6.2"
 gem "rspec", "~> 3.12"
 gem "ruby-lsp", "~> 0.15"
-gem "simplecov", "~> 0.22", require: false
+gem "simplecov", "~> 1.1", require: false
 gem "webmock", "~> 3.18"
 
 # railties is a dev-only dependency: it provides Rails::Railtie and Rails::Generators
